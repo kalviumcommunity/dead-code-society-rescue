@@ -1,22 +1,22 @@
 {
   "name": "logitrack-backend",
-  "version": "1.0.0",
-  "description": "Logistics and shipment tracking application backend",
-  "main": "src/app.js",
+  "version": "1.1.0",
+  "description": "Logistics and shipment tracking application backend - Refactored MVC version",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Junior Dev",
+  "author": "Senior Dev",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.19.0",
+    "bcrypt": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
-    "md5": "^2.3.0",
     "mongoose": "^5.10.0"
   },
   "devDependencies": {

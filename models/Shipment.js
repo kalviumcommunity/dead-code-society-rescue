@@ -1,6 +1,6 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var shipmentSchema = new mongoose.Schema({
+const shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,
         required: true,
@@ -8,44 +8,36 @@ var shipmentSchema = new mongoose.Schema({
     },
     origin: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     destination: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     status: {
         type: String,
-        default: 'pending' // pending, in-progress, delivered, cancelled
+        enum: ['pending', 'in-progress', 'delivered', 'cancelled'],
+        default: 'pending'
     },
     weight: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     carrier: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
-    // which user this shipment belongs to
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
-});
-
-// hook for pre-save on model
-shipmentSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Shipment', shipmentSchema);

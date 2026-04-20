@@ -11,6 +11,7 @@ var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [CRITICAL] Hardcoded fallback for JWT_SECRET. App should crash synchronously if the secret is not provided in environment variables.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -21,9 +22,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] Using spread operator on req.body allows Mass Assignment and NoSQL injection. Input must be validated and destructured explicitly.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 is an insecure cryptographic hash function for passwords. Use bcrypt or argon2.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -40,6 +43,7 @@ router.post('/register', function(req, res) {
         })
         .catch(function(err) {
             console.log('Error in register: ' + err);
+            // SMELL: [HIGH] Returning 200 OK on failure. Use proper HTTP status codes (e.g., 400, 500) instead of success flags.
             res.json({ success: false, error: 'Cannot register' });
         });
 });
@@ -47,6 +51,7 @@ router.post('/register', function(req, res) {
 // POST /login - get a token
 router.post('/login', function(req, res) {
     // find user by email - direct spread again for injection
+    // SMELL: [CRITICAL] Passing unvalidated req.body.email directly into findOne allows NoSQL injection. Validate and cast to string.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
@@ -88,6 +93,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Duplicated authentication logic across multiple routes. Move this into a reusable authMiddleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -111,6 +117,7 @@ router.get('/shipments', function(req, res) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
+                        // SMELL: [CRITICAL] N+1 Query problem. Executing database queries inside a loop causes severe performance degradation. Use .populate() instead.
                         User.findById(ship.userId)
                             .then(function(u) {
                                 ship.user_details = u;
@@ -138,6 +145,7 @@ router.get('/shipments', function(req, res) {
 // GET /shipments/:id - get one shipment
 router.get('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Duplicated authentication logic across multiple routes. Move this into a reusable authMiddleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -169,6 +177,7 @@ router.get('/shipments/:id', function(req, res) {
 // POST /shipments - create shipment
 router.post('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Duplicated authentication logic across multiple routes. Move this into a reusable authMiddleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -179,6 +188,7 @@ router.post('/shipments', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // generation of tracking id
+        // SMELL: [MEDIUM] Predictable tracking ID generation logic can cause collisions and allows scraping. Use a robust library like uuid.
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
         // Use spread to save time, mongoose will handle validation... maybe
@@ -186,6 +196,7 @@ router.post('/shipments', function(req, res) {
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
+            // SMELL: [MEDIUM] Hardcoded magic string for status. Define an Enum or constant for shipment statuses to prevent typos.
             status: 'pending' // magic string
         });
 
@@ -195,6 +206,7 @@ router.post('/shipments', function(req, res) {
             })
             .catch(function(err) {
                 console.log('Error saving shipment');
+                // SMELL: [HIGH] Leaking raw database errors to the client. This can expose database internals. Map errors to safe, generic messages.
                 res.json({ error: err });
             });
     });
@@ -203,6 +215,7 @@ router.post('/shipments', function(req, res) {
 // PATCH /shipments/:id/status - change status
 router.patch('/shipments/:id/status', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Duplicated authentication logic across multiple routes. Move this into a reusable authMiddleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -232,6 +245,7 @@ router.patch('/shipments/:id/status', function(req, res) {
 // DELETE /shipments/:id - remove shipment
 router.delete('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Duplicated authentication logic across multiple routes. Move this into a reusable authMiddleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -242,6 +256,7 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Missing ownership/authorization check before deletion. Any logged-in user can delete any shipment (IDOR vulnerability).
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -259,6 +274,7 @@ router.delete('/shipments/:id', function(req, res) {
 // GET /profile - current user
 router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Duplicated authentication logic across multiple routes. Move this into a reusable authMiddleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -271,6 +287,7 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
+            // SMELL: [HIGH] Unhandled Promise rejection. Missing .catch block will cause the request to hang indefinitely on database failure.
             }); // missing catch
     });
 });

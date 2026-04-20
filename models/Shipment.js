@@ -16,6 +16,7 @@ var shipmentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
+        // SMELL: [MEDIUM] Missing enum constraint on status field. Add enum: ['pending', 'in-progress', 'delivered', 'cancelled'].
         default: 'pending' // pending, in-progress, delivered, cancelled
     },
     weight: {

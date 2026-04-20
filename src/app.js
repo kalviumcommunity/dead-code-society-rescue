@@ -5,6 +5,7 @@ var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var path = require('path');
+const errorHandler = require('./middlewares/error.middleware');
 
 // models are here
 var User = require('../models/User'); // manually load models
@@ -46,6 +47,9 @@ app.get('/', function(req, res) {
 });
 
 // no 404 handler here, let express handle it for now
+
+// centralized error handling
+app.use(errorHandler);
 
 // start server
 var PORT = process.env.PORT || 3000;

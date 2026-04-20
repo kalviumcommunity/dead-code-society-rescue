@@ -1,57 +1,84 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack Backend Platform
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+## 1. Project Overview
+This repository contains the backend infrastructure for the **LogiTrack** shipment tracking platform, tailored for small businesses. It handles user authentication, role-based access control, and comprehensive logistics management, allowing users to securely track shipments from origin to destination.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## 2. Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Technology | Purpose |
+| ---------- | ------- |
+| **Node.js** | JavaScript runtime environment |
+| **Express.js** | Core web framework for REST API routing |
+| **MongoDB** | NoSQL database for document persistence |
+| **Mongoose** | Object Data Modeling (ODM) layer for schema enforcement |
+| **JWT** | JSON Web Tokens for stateless authentication |
+| **Joi** | Request payload validation |
+| **bcrypt** | Cryptographic hashing for secure password storage |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## 3. Quick Start Setup
 
-### 1. Installation
-Clone the repo and install the dependencies:
+To get the backend running locally:
+
 ```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd logitrack-backend
+
+# 2. Install dependencies
 npm install
-```
 
-### 2. Start the Engine
-Run the development server:
-```bash
+# 3. Configure environment variables
+cp .env.example .env
+
+# 4. Start the development server
 npm run dev
 ```
-Or start in production:
-```bash
-npm start
+
+## 4. Environment Variables
+
+Create a `.env` file in the root directory. Below is the required configuration:
+
+| Variable | Required | Example Value | Description |
+| -------- | -------- | ------------- | ----------- |
+| `DATABASE_URL` | **Yes** | `mongodb://localhost:27017/logitrack` | Full MongoDB connection string URI |
+| `JWT_SECRET` | **Yes** | `super-secret-key-123` | Cryptographic key used to sign Auth tokens |
+| `PORT` | No | `3000` | Port on which the API server listens |
+
+## 5. Full API Reference
+
+| Method | Endpoint | Auth Required | Description |
+| ------ | -------- | ------------- | ----------- |
+| `POST` | `/api/register` | No | Creates a new user account |
+| `POST` | `/api/login` | No | Authenticates a user and returns a JWT |
+| `GET` | `/api/profile` | **Yes** | Retrieves the currently authenticated user's profile |
+| `GET` | `/api/shipments` | **Yes** | Retrieves all shipments belonging to the user |
+| `GET` | `/api/shipments/:id` | **Yes** | Retrieves a specific shipment by its tracking ID |
+| `POST` | `/api/shipments` | **Yes** | Creates a new shipment |
+| `PATCH`| `/api/shipments/:id/status` | **Yes** | Updates the delivery status of a shipment (Admin privileges required for 'delivered') |
+| `DELETE`|`/api/shipments/:id` | **Yes** | Deletes a shipment |
+
+## 6. Architecture Diagram
+
+The application implements a strict Model-View-Controller (MVC) architectural pattern:
+
+```text
+Incoming HTTP Request
+        │
+        ▼
+   [ Middlewares ] (Joi Validation, JWT Auth)
+        │
+        ▼
+     [ Routes ]    (URL routing)
+        │
+        ▼
+  [ Controllers ]  (Req/Res handling, Error Catching)
+        │
+        ▼
+   [ Services ]    (Business Logic, DB Queries)
+        │
+        ▼
+    [ Models ]     (Mongoose Schemas)
+        │
+        ▼
+   [ MongoDB ]     (Data Storage)
 ```
-
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
-
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
-
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.

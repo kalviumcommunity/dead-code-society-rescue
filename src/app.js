@@ -1,9 +1,11 @@
 require('dotenv').config();
 var express = require('express');
 var mongoose = require('mongoose');
+// SMELL: [MEDIUM] body-parser is deprecated as a separate dependency. Use built-in express.json() and express.urlencoded() instead.
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var path = require('path');
+const errorHandler = require('./middlewares/error.middleware');
 
 // models are here
 var User = require('../models/User'); // manually load models
@@ -20,6 +22,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
+// SMELL: [HIGH] Fallback database URL might hide missing environment configurations in production. Connection string must be strictly loaded from environment.
 var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
@@ -44,6 +47,9 @@ app.get('/', function(req, res) {
 });
 
 // no 404 handler here, let express handle it for now
+
+// centralized error handling
+app.use(errorHandler);
 
 // start server
 var PORT = process.env.PORT || 3000;

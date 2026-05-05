@@ -1,56 +1,43 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const routes = require('./routes/index');
+const { errorHandler } = require('./middlewares/error.middleware');
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+const app = express();
 
-// routes
-var routes = require('./routes');
-
-var app = express();
-
-// middleware setup
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+
 mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useCreateIndex: true,
+  useFindAndModify: false
 })
-.then(function() {
+  .then(() => {
     console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
+  })
+  .catch((err) => {
+    console.error('DATABASE CONNECTION ERROR:');
+    console.error(err);
+  });
+
+app.use('/api', routes);
+
+app.get('/', (req, res) => {
+  res.json({ message: 'LogiTrack Backend running' });
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
+app.use(errorHandler);
 
-// welcome route
-app.get('/', function(req, res) {
-    res.json({ message: 'LogiTrack Backend running' });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is alive on port ${PORT}`);
 });
 
-// no 404 handler here, let express handle it for now
-
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
-    console.log('Server is alive on port ' + PORT);
-    console.log('Wait for MongoDB before testing...');
-});
-
-// exporting for testing later
 module.exports = app;

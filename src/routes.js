@@ -5,6 +5,7 @@ var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [MEDIUM] unused imports bloat the file and hide real dependencies.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
@@ -19,11 +20,10 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [HIGH] passing req.body directly into the model allows NoSQL injection and invalid fields.
     var userData = { ...req.body };
     
-    // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] md5 is not a password hashing algorithm; it is insecure and reversible.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -46,6 +46,7 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
+    // SMELL: [HIGH] no input validation on login request allows malformed payloads.
     // find user by email - direct spread again for injection
     User.findOne({ email: req.body.email })
         .then(function(user) {
@@ -99,7 +100,7 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
+                // SMELL: [CRITICAL] N+1 query pattern with a DB call inside a loop creates huge performance issues.
                 var finalData = [];
                 var itemsProcessed = 0;
 
@@ -132,6 +133,7 @@ router.get('/shipments', function(req, res) {
                 console.log(err);
                 res.json({ error: 'Fetch failed' });
             });
+
     });
 });
 
@@ -241,7 +243,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [HIGH] delete route does not verify ownership or admin role.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -268,10 +270,11 @@ router.get('/profile', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [MEDIUM] missing catch on the user lookup can crash requests silently.
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            });
     });
 });
 

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Shipment = require('../models/Shipment.model');
 const { NotFoundError, ForbiddenError } = require('../utils/errors.util');
 
@@ -44,9 +45,46 @@ const createShipment = async (data, userId) => {
  * @returns {Promise<array>} Array of shipments with user details.
  */
 const getShipmentsByUser = async (userId) => {
-  const shipments = await Shipment.find({ userId })
-    .populate('userId', 'name email')
-    .lean();
+  const shipments = await Shipment.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'userId',
+      },
+    },
+    {
+      $unwind: {
+        path: '$userId',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        trackingId: 1,
+        origin: 1,
+        destination: 1,
+        status: 1,
+        weight: 1,
+        carrier: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        userId: {
+          _id: '$userId._id',
+          name: '$userId.name',
+          email: '$userId.email',
+        },
+      },
+    },
+  ]);
+
+  console.log(`Shipment listing resolved with 1 aggregation query for user ${userId}`);
 
   return shipments;
 };

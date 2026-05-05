@@ -1,6 +1,7 @@
 require('dotenv').config();
 var express = require('express');
 var mongoose = require('mongoose');
+// SMELL: [MEDIUM] body-parser is deprecated as a separate dependency. Use built-in express.json() and express.urlencoded() instead.
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var path = require('path');
@@ -20,7 +21,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+// SMELL: [HIGH] Must use environment variable for MongoDB connection string. Hardcoded connection string can lead to security issues and makes it difficult to change the database configuration without modifying code.
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

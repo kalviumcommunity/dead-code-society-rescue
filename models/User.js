@@ -18,6 +18,7 @@ var userSchema = new Schema({
     },
     role: {
         type: String,
+         // SMELL: [MEDIUM] Missing enum constraint on role field. Add enum: ['user', 'admin']
         default: 'user' // either 'user' or 'admin'
     },
     createdAt: {

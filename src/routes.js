@@ -11,6 +11,7 @@ var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [CRITICAL] Hardcoded JWT secret in codebase. Must be loaded from environment variable for security.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -21,9 +22,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] No input validation on user registration. This allows for NoSQL injection and other malicious input. Implement validation to ensure only expected fields are accepted and properly sanitized.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] Using MD5 for password hashing is insecure. Use a stronger hashing algorithm like bcrypt or Argon2 to protect user passwords.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -40,6 +43,7 @@ router.post('/register', function(req, res) {
         })
         .catch(function(err) {
             console.log('Error in register: ' + err);
+            //SMELL: [HIGH] Returing 200 status code even on registration failure. This can mislead clients into thinking the registration was successful. Use appropriate HTTP status codes (e.g., 400 for bad request, 500 for server error) to indicate the actual outcome of the registration attempt.
             res.json({ success: false, error: 'Cannot register' });
         });
 });
@@ -47,6 +51,7 @@ router.post('/register', function(req, res) {
 // POST /login - get a token
 router.post('/login', function(req, res) {
     // find user by email - direct spread again for injection
+    // SMELL: [CRITICAL] No input validation on login. This allows for NoSQL injection and other malicious input. Implement validation to ensure only expected fields are accepted and properly sanitized.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
@@ -88,6 +93,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [CRITICAL] Repeated authentication code in every route handler. This leads to code duplication and makes it difficult to maintain. Refactor authentication logic into a middleware function that can be reused across routes.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -111,6 +117,7 @@ router.get('/shipments', function(req, res) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
+                        // SMELL: [HIGH] N+1 query problem when fetching user details for each shipment. This can lead to performance issues as the number of shipments increases. Consider using aggregation or batch queries to fetch all necessary data in fewer database calls.
                         User.findById(ship.userId)
                             .then(function(u) {
                                 ship.user_details = u;
@@ -138,6 +145,7 @@ router.get('/shipments', function(req, res) {
 // GET /shipments/:id - get one shipment
 router.get('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [CRITICAL] Repeated authentication code in every route handler. This leads to code duplication and makes it difficult to maintain. Refactor authentication logic into a middleware function that can be reused across routes.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -169,6 +177,7 @@ router.get('/shipments/:id', function(req, res) {
 // POST /shipments - create shipment
 router.post('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [CRITICAL] Repeated authentication code in every route handler. This leads to code duplication and makes it difficult to maintain. Refactor authentication logic into a middleware function that can be reused across routes.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -179,6 +188,7 @@ router.post('/shipments', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // generation of tracking id
+        // SMELL: [MEDIUM] Tracking ID generation using timestamp and random number can lead to collisions under high load. Consider using a more robust method for generating unique tracking IDs, such as UUIDs or a dedicated sequence in the database.
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
         // Use spread to save time, mongoose will handle validation... maybe
@@ -186,6 +196,7 @@ router.post('/shipments', function(req, res) {
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
+            // SMELL: [HIGH] Defaulting shipment status to 'pending' without validation. This can lead to inconsistent data if the client sends an unexpected status. Implement validation to ensure only allowed status values are accepted and set the default in the schema instead of hardcoding it here.
             status: 'pending' // magic string
         });
 
@@ -195,6 +206,7 @@ router.post('/shipments', function(req, res) {
             })
             .catch(function(err) {
                 console.log('Error saving shipment');
+                // SMELL: [MEDIUM] Returning raw error object in response can expose sensitive information. Consider returning a generic error message instead of the full error details to avoid potential information leakage.
                 res.json({ error: err });
             });
     });
@@ -203,6 +215,7 @@ router.post('/shipments', function(req, res) {
 // PATCH /shipments/:id/status - change status
 router.patch('/shipments/:id/status', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [CRITICAL] Repeated authentication code in every route handler. This leads to code duplication and makes it difficult to maintain. Refactor authentication logic into a middleware function that can be reused across routes.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -232,6 +245,7 @@ router.patch('/shipments/:id/status', function(req, res) {
 // DELETE /shipments/:id - remove shipment
 router.delete('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [CRITICAL] Repeated authentication code in every route handler. This leads to code duplication and makes it difficult to maintain. Refactor authentication logic into a middleware function that can be reused across routes.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -242,6 +256,7 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] No permission check on shipment deletion. This allows any authenticated user to delete any shipment, leading to potential data loss and security issues. Implement proper authorization checks to ensure that only the owner of the shipment or an admin can perform deletion.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -259,6 +274,7 @@ router.delete('/shipments/:id', function(req, res) {
 // GET /profile - current user
 router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [CRITICAL] Repeated authentication code in every route handler. This leads to code duplication and makes it difficult to maintain. Refactor authentication logic into a middleware function that can be reused across routes.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -271,7 +287,8 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            // SMELL: [HIGH] Unhandled Promise rejection. Missing .catch block will cause the request to hang indefinitely on database failure.
+           }); // missing catch
     });
 });
 

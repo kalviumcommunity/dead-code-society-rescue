@@ -5,6 +5,7 @@ const cors = require('cors');
 
 // routes
 const routes = require('./routes/index');
+const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
@@ -41,7 +42,17 @@ app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-// no 404 handler here, let express handle it for now
+// 404 handler - must come before error handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        error: 'NotFoundError',
+        message: 'Route not found'
+    });
+});
+
+// Centralized error handling middleware - MUST BE LAST
+app.use(errorHandler);
 
 // start server
 const PORT = process.env.PORT || 3000;

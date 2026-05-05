@@ -1,5 +1,6 @@
 const Shipment = require('../models/Shipment');
 const User = require('../models/User');
+const { NotFoundError, ForbiddenError } = require('../utils/errors.util');
 
 /**
  * Generates a unique tracking ID
@@ -47,12 +48,12 @@ const getShipment = async (shipmentId, userId, userRole) => {
   const shipment = await Shipment.findById(shipmentId);
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new NotFoundError('Shipment not found');
   }
 
   // Permission check: owner or admin can view
   if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-    throw new Error('No access to this shipment');
+    throw new ForbiddenError('No access to this shipment');
   }
 
   return shipment;
@@ -89,7 +90,7 @@ const createShipment = async (shipmentData, userId) => {
 const updateShipmentStatus = async (shipmentId, newStatus, userRole) => {
   // Only admins can mark as delivered
   if (newStatus === 'delivered' && userRole !== 'admin') {
-    throw new Error('Admins only can deliver');
+    throw new ForbiddenError('Admins only can deliver');
   }
 
   const doc = await Shipment.findByIdAndUpdate(
@@ -113,12 +114,12 @@ const deleteShipment = async (shipmentId, userId, userRole) => {
   const shipment = await Shipment.findById(shipmentId);
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new NotFoundError('Shipment not found');
   }
 
   // Permission check: only owner or admin can delete
   if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-    throw new Error('No permission to delete this shipment');
+    throw new ForbiddenError('No permission to delete this shipment');
   }
 
   await Shipment.findByIdAndDelete(shipmentId);

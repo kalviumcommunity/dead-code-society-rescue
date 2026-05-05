@@ -4,8 +4,9 @@ const shipmentService = require('../services/shipment.service');
  * Lists all shipments for the authenticated user
  * @param {Object} req - Express request
  * @param {Object} res - Express response
+ * @param {Function} next - Express next middleware
  */
-const listShipments = async (req, res) => {
+const listShipments = async (req, res, next) => {
   try {
     const shipments = await shipmentService.listShipments(req.userId);
     res.status(200).json({
@@ -14,11 +15,7 @@ const listShipments = async (req, res) => {
       data: shipments
     });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ 
-      success: false,
-      error: 'Fetch failed' 
-    });
+    next(err);
   }
 };
 
@@ -26,8 +23,9 @@ const listShipments = async (req, res) => {
  * Gets a single shipment by ID
  * @param {Object} req - Express request
  * @param {Object} res - Express response
+ * @param {Function} next - Express next middleware
  */
-const getShipment = async (req, res) => {
+const getShipment = async (req, res, next) => {
   try {
     const shipment = await shipmentService.getShipment(
       req.params.id,
@@ -36,11 +34,7 @@ const getShipment = async (req, res) => {
     );
     res.status(200).json(shipment);
   } catch (err) {
-    console.log(err);
-    res.status(err.message.includes('No access') ? 403 : 404).json({ 
-      success: false,
-      error: err.message 
-    });
+    next(err);
   }
 };
 
@@ -48,17 +42,14 @@ const getShipment = async (req, res) => {
  * Creates a new shipment
  * @param {Object} req - Express request
  * @param {Object} res - Express response
+ * @param {Function} next - Express next middleware
  */
-const createShipment = async (req, res) => {
+const createShipment = async (req, res, next) => {
   try {
     const shipment = await shipmentService.createShipment(req.body, req.userId);
     res.status(201).json(shipment);
   } catch (err) {
-    console.log('Error saving shipment: ' + err);
-    res.status(400).json({ 
-      success: false,
-      error: 'Cannot create shipment' 
-    });
+    next(err);
   }
 };
 
@@ -66,8 +57,9 @@ const createShipment = async (req, res) => {
  * Updates shipment status
  * @param {Object} req - Express request
  * @param {Object} res - Express response
+ * @param {Function} next - Express next middleware
  */
-const updateStatus = async (req, res) => {
+const updateStatus = async (req, res, next) => {
   try {
     const shipment = await shipmentService.updateShipmentStatus(
       req.params.id,
@@ -76,11 +68,7 @@ const updateStatus = async (req, res) => {
     );
     res.status(200).json(shipment);
   } catch (err) {
-    console.log(err);
-    res.status(err.message.includes('Admins only') ? 403 : 400).json({ 
-      success: false,
-      error: err.message 
-    });
+    next(err);
   }
 };
 
@@ -88,8 +76,9 @@ const updateStatus = async (req, res) => {
  * Deletes a shipment
  * @param {Object} req - Express request
  * @param {Object} res - Express response
+ * @param {Function} next - Express next middleware
  */
-const deleteShipment = async (req, res) => {
+const deleteShipment = async (req, res, next) => {
   try {
     await shipmentService.deleteShipment(
       req.params.id,
@@ -101,11 +90,7 @@ const deleteShipment = async (req, res) => {
       message: 'Deleted ' + req.params.id 
     });
   } catch (err) {
-    console.log(err);
-    res.status(err.message.includes('No permission') ? 403 : 404).json({ 
-      success: false,
-      error: err.message 
-    });
+    next(err);
   }
 };
 

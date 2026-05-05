@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { hashPassword, comparePassword } = require('../utils/hash.util');
 const { signToken } = require('../utils/jwt.util');
+const { UnauthorizedError } = require('../utils/errors.util');
 
 /**
  * Registers a new user with email and password
@@ -43,13 +44,13 @@ const login = async (email, password) => {
   const user = await User.findOne({ email });
   
   if (!user) {
-    throw new Error('No user found with that email');
+    throw new UnauthorizedError('No user found with that email');
   }
 
   const isPasswordValid = await comparePassword(password, user.password);
   
   if (!isPasswordValid) {
-    throw new Error('Password does not match');
+    throw new UnauthorizedError('Password does not match');
   }
 
   const token = signToken(

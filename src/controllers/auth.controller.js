@@ -1,4 +1,5 @@
 const authService = require('../services/auth.service');
+const asyncHandler = require('../middlewares/async.middleware');
 
 /**
  * Registers a new user.
@@ -7,14 +8,10 @@ const authService = require('../services/auth.service');
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const register = async (req, res, next) => {
-  try {
-    const user = await authService.register(req.body);
-    res.status(201).json({ success: true, data: user });
-  } catch (err) {
-    next(err);
-  }
-};
+const register = asyncHandler(async (req, res) => {
+  const user = await authService.register(req.body);
+  res.status(201).json({ success: true, data: user });
+});
 
 /**
  * Logs in a user and returns a JWT token.
@@ -23,14 +20,10 @@ const register = async (req, res, next) => {
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const login = async (req, res, next) => {
-  try {
-    const result = await authService.login(req.body.email, req.body.password);
-    res.status(200).json({ success: true, data: result });
-  } catch (err) {
-    next(err);
-  }
-};
+const login = asyncHandler(async (req, res) => {
+  const result = await authService.login(req.body.email, req.body.password);
+  res.status(200).json({ success: true, data: result });
+});
 
 /**
  * Retrieves the current user profile.
@@ -39,14 +32,10 @@ const login = async (req, res, next) => {
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const getProfile = async (req, res, next) => {
-  try {
-    const user = await authService.getUserById(req.userId);
-    res.status(200).json({ success: true, data: user });
-  } catch (err) {
-    next(err);
-  }
-};
+const getProfile = asyncHandler(async (req, res) => {
+  const user = await authService.getUserById(req.userId);
+  res.status(200).json({ success: true, data: user });
+});
 
 module.exports = {
   register,

@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const errorHandler = require('./middlewares/error.middleware');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const shipmentRoutes = require('./routes/shipment.routes');
@@ -27,7 +26,5 @@ app.use((req, res) => {
         message: `Route ${req.method} ${req.path} not found`,
     });
 });
-
-app.use(errorHandler);
 
 module.exports = app;

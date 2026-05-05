@@ -1,4 +1,5 @@
 const shipmentService = require('../services/shipment.service');
+const asyncHandler = require('../middlewares/async.middleware');
 
 /**
  * Creates a new shipment.
@@ -7,14 +8,10 @@ const shipmentService = require('../services/shipment.service');
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const create = async (req, res, next) => {
-  try {
-    const shipment = await shipmentService.createShipment(req.body, req.userId);
-    res.status(201).json({ success: true, data: shipment });
-  } catch (err) {
-    next(err);
-  }
-};
+const create = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.createShipment(req.body, req.userId);
+  res.status(201).json({ success: true, data: shipment });
+});
 
 /**
  * Retrieves all shipments for the authenticated user.
@@ -23,14 +20,10 @@ const create = async (req, res, next) => {
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const getByUser = async (req, res, next) => {
-  try {
-    const shipments = await shipmentService.getShipmentsByUser(req.userId);
-    res.status(200).json({ success: true, data: shipments });
-  } catch (err) {
-    next(err);
-  }
-};
+const getByUser = asyncHandler(async (req, res) => {
+  const shipments = await shipmentService.getShipmentsByUser(req.userId);
+  res.status(200).json({ success: true, data: shipments });
+});
 
 /**
  * Retrieves a single shipment by ID.
@@ -39,14 +32,10 @@ const getByUser = async (req, res, next) => {
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const getById = async (req, res, next) => {
-  try {
-    const shipment = await shipmentService.getShipmentById(req.params.id);
-    res.status(200).json({ success: true, data: shipment });
-  } catch (err) {
-    next(err);
-  }
-};
+const getById = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.getShipmentById(req.params.id);
+  res.status(200).json({ success: true, data: shipment });
+});
 
 /**
  * Updates shipment status.
@@ -55,19 +44,15 @@ const getById = async (req, res, next) => {
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const updateStatus = async (req, res, next) => {
-  try {
-    const shipment = await shipmentService.updateShipmentStatus(
-      req.params.id,
-      req.body.status,
-      req.userId,
-      req.userRole,
-    );
-    res.status(200).json({ success: true, data: shipment });
-  } catch (err) {
-    next(err);
-  }
-};
+const updateStatus = asyncHandler(async (req, res) => {
+  const shipment = await shipmentService.updateShipmentStatus(
+    req.params.id,
+    req.body.status,
+    req.userId,
+    req.userRole,
+  );
+  res.status(200).json({ success: true, data: shipment });
+});
 
 /**
  * Deletes a shipment.
@@ -76,14 +61,10 @@ const updateStatus = async (req, res, next) => {
  * @param {import('express').NextFunction} next - Next middleware.
  * @returns {Promise<void>}
  */
-const deleteOne = async (req, res, next) => {
-  try {
-    await shipmentService.deleteShipment(req.params.id, req.userId, req.userRole);
-    res.status(200).json({ success: true, message: 'Shipment deleted' });
-  } catch (err) {
-    next(err);
-  }
-};
+const deleteOne = asyncHandler(async (req, res) => {
+  await shipmentService.deleteShipment(req.params.id, req.userId, req.userRole);
+  res.status(200).json({ success: true, message: 'Shipment deleted' });
+});
 
 module.exports = {
   create,

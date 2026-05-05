@@ -6,9 +6,10 @@ const { signToken } = require('../utils/jwt.util');
  * Registers a new user with email and password
  * @param {Object} userData - User data {email, password, name}
  * @returns {Promise<Object>} Created user document
+ * @throws {Error} If registration fails
  */
 const register = async (userData) => {
-  const hashedPassword = hashPassword(userData.password);
+  const hashedPassword = await hashPassword(userData.password);
   
   const newUser = new User({
     email: userData.email,
@@ -36,6 +37,7 @@ const register = async (userData) => {
  * @param {string} email - User's email
  * @param {string} password - User's plain text password
  * @returns {Promise<Object>} Authenticated user data and JWT token
+ * @throws {Error} If user not found or password is invalid
  */
 const login = async (email, password) => {
   const user = await User.findOne({ email });
@@ -44,7 +46,7 @@ const login = async (email, password) => {
     throw new Error('No user found with that email');
   }
 
-  const isPasswordValid = comparePassword(password, user.password);
+  const isPasswordValid = await comparePassword(password, user.password);
   
   if (!isPasswordValid) {
     throw new Error('Password does not match');

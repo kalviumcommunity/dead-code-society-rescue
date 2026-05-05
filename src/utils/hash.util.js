@@ -1,22 +1,26 @@
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+
+const SALT_ROUNDS = 12;
 
 /**
- * Hashes a password using MD5 (TEMPORARY - will be replaced with bcrypt in Step 5)
- * @param {string} password - Plain text password
- * @returns {string} MD5 hash of password
+ * Hashes a password using bcrypt with 12 salt rounds
+ * @param {string} password - Plain text password to hash
+ * @returns {Promise<string>} Hashed password
+ * @throws {Error} If hashing fails
  */
-const hashPassword = (password) => {
-  return md5(password);
+const hashPassword = async (password) => {
+  return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
 /**
- * Compares a plain text password with an MD5 hash
+ * Compares a plain text password with a bcrypt hash
  * @param {string} plainPassword - Plain text password to verify
- * @param {string} hashedPassword - MD5 hash to compare against
- * @returns {boolean} True if passwords match
+ * @param {string} hashedPassword - bcrypt hash to compare against
+ * @returns {Promise<boolean>} True if passwords match
+ * @throws {Error} If comparison fails
  */
-const comparePassword = (plainPassword, hashedPassword) => {
-  return md5(plainPassword) === hashedPassword;
+const comparePassword = async (plainPassword, hashedPassword) => {
+  return await bcrypt.compare(plainPassword, hashedPassword);
 };
 
 module.exports = {

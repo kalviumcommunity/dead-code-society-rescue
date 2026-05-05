@@ -1,5 +1,7 @@
+// SMELL: [MEDIUM] Using var instead of const/let. Leads to hoisting bugs and unclear variable scope.
 var mongoose = require('mongoose');
 
+// SMELL: [MEDIUM] Using var instead of const/let. Leads to hoisting bugs and unclear variable scope.
 var Schema = mongoose.Schema;
 
 var userSchema = new Schema({

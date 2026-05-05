@@ -1,5 +1,7 @@
+// SMELL: [MEDIUM] Using var instead of const/let. Leads to hoisting bugs and unclear variable scope.
 var mongoose = require('mongoose');
 
+// SMELL: [MEDIUM] Magic string for default status value. Should be a constant or enum.
 var shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,

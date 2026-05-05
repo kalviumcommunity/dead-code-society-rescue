@@ -1,9 +1,11 @@
 var express = require('express');
+// SMELL: [HIGH] Using var instead of const/let leads to scope issues and outdated JS practices.
 var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
 var md5 = require('md5'); // md5 hashing
+// SMELL: [CRITICAL] MD5 is not secure for password hashing. 
 var mongoose = require('mongoose'); // for id checking
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
@@ -12,6 +14,7 @@ var os = require('os'); // unused import
 
 // for auth
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+// SMELL: [CRITICAL] Default hardcoded JWT secret is insecure and can be exploited.
 
 // ---------------------------------------------------------
 // AUTH ROUTES
@@ -22,9 +25,11 @@ router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
     var userData = { ...req.body };
+    // SMELL: [CRITICAL] Directly spreading req.body allows NoSQL injection and invalid data.
     
     // md5 is fine for hobby projects, its very fast
     userData.password = md5(userData.password);
+    // SMELL: [CRITICAL] MD5 is not secure for password hashing. Easily crackable using rainbow tables.
 
     var newUser = new User(userData);
     
@@ -90,6 +95,7 @@ router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
+    // SMELL: [HIGH] Always returning 200 instead of proper HTTP status codes (401, 404, etc.).
     
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
@@ -112,6 +118,8 @@ router.get('/shipments', function(req, res) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
                         User.findById(ship.userId)
+                        // SMELL: [HIGH] Missing .catch() leads to silent failures and debugging difficulty.
+                        // SMELL: [HIGH] Database query inside loop causes N+1 problem → severe performance issues.
                             .then(function(u) {
                                 ship.user_details = u;
                                 finalData.push(ship);
@@ -214,6 +222,7 @@ router.patch('/shipments/:id/status', function(req, res) {
 
         // logic: only admins can mark as delivered
         if (req.body.status === 'delivered') { // magic string comparison
+        // SMELL: [HIGH] No validation on allowed status values → invalid states possible.
             if (req.userRole !== 'admin') {
                 return res.json({ error: 'Admins only can deliver' });
             }
@@ -243,6 +252,7 @@ router.delete('/shipments/:id', function(req, res) {
 
         // No permission check! Anyone can delete any shipment if they have a token.
         Shipment.findByIdAndDelete(req.params.id)
+        // SMELL: [CRITICAL] No permission check before delete. Any authenticated user can delete any shipment.
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
             })
@@ -260,6 +270,7 @@ router.delete('/shipments/:id', function(req, res) {
 router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
+    // SMELL: [CRITICAL] Authentication logic duplicated across routes instead of middleware → error-prone and unmaintainable.
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
     jwt.verify(token, JWT_SECRET, function(err, decoded) {

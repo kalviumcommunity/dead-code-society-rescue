@@ -1,15 +1,25 @@
 // Auth controller stub
 const User = require('../../models/User');
 const jwt = require('jsonwebtoken');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const { AppError, ConflictError, UnauthorizedError, NotFoundError } = require('../utils/errors.util');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 
+
+/**
+ * Register a new user
+ * @route POST /register
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 // POST /register
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const userData = { ...req.body };
-    userData.password = md5(userData.password);
+    // Hash password with bcrypt (12 rounds)
+    userData.password = await bcrypt.hash(userData.password, 12);
     const newUser = new User(userData);
     const user = await newUser.save();
     console.log('Registered user: ' + user.email);
@@ -19,19 +29,32 @@ const register = async (req, res) => {
       user: user
     });
   } catch (err) {
-    console.log('Error in register: ' + err);
-    res.json({ success: false, error: 'Cannot register' });
+    if (err.code === 11000) {
+      // Duplicate key error (email already exists)
+      return next(new ConflictError('Email already registered'));
+    }
+    next(new AppError('Cannot register', 500));
   }
 };
 
+
+/**
+ * Login a user
+ * @route POST /login
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 // POST /login
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.json({ error: 'No user found with that email' });
+      return next(new NotFoundError('No user found with that email'));
     }
-    if (user.password === md5(req.body.password)) {
+    // Compare password with bcrypt
+    const isValid = await bcrypt.compare(req.body.password, user.password);
+    if (isValid) {
       const token = jwt.sign(
         { id: user._id, role: user.role },
         JWT_SECRET,
@@ -47,11 +70,10 @@ const login = async (req, res) => {
         }
       });
     } else {
-      res.json({ error: 'Password does not match' });
+      return next(new UnauthorizedError('Password does not match'));
     }
   } catch (err) {
-    console.log('Login crash: ' + err);
-    res.json({ error: 'Server error' });
+    next(new AppError('Server error', 500));
   }
 };
 

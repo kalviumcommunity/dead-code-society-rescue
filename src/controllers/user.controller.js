@@ -1,29 +1,37 @@
 // User controller stub
 const User = require('../../models/User');
-const jwt = require('jsonwebtoken');
 const os = require('os');
-const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+const { AppError, NotFoundError } = require('../utils/errors.util');
 
 // GET /profile
-const getProfile = async (req, res) => {
-    const token = req.headers['authorization'];
-    if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    jwt.verify(token, JWT_SECRET, async (err, decoded) => {
-        if (err) return res.json({ error: 'Unauthorized: invalid token' });
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
-        try {
-            const user = await User.findById(req.userId);
-            res.json(user);
-        } catch (err) {
-            res.json({ error: 'Error fetching profile' });
+/**
+ * Get the authenticated user's profile
+ * @route GET /profile
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+const getProfile = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return next(new NotFoundError('User not found'));
         }
-    });
+        res.json(user);
+    } catch (err) {
+        next(new AppError('Error fetching profile', 500));
+    }
 };
 
 // GET /status
+/**
+ * Get server status info
+ * @route GET /status
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 const status = (req, res) => {
-    var info = {
+    const info = {
         os: os.type(),
         release: os.release(),
         uptime: process.uptime(),
@@ -33,12 +41,18 @@ const status = (req, res) => {
 };
 
 // GET /ping
+/**
+ * Ping endpoint for health check
+ * @route GET /ping
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 const ping = (req, res) => {
     res.json({ pong: 'active' });
 };
 
 module.exports = {
-  getProfile,
-  status,
-  ping
+    getProfile,
+    status,
+    ping
 };

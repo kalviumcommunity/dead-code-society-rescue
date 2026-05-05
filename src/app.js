@@ -35,8 +35,13 @@ mongoose.connect(mongoUrl, {
     console.log(err);
 });
 
+
 // register routes
 app.use('/api', routes); // all routes under /api
+
+// centralized error handler (must be last)
+const errorHandler = require('./middlewares/error.middleware');
+app.use(errorHandler);
 
 // welcome route
 app.get('/', function(req, res) {

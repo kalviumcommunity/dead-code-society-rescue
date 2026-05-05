@@ -17,7 +17,7 @@ Complete architectural overhaul of the LogiTrack backend. Transformed from a mon
 
 ---
 
-### ✅ Added
+### Added
 
 #### Architecture & Code Organization
 - **MVC Restructuring:** Complete separation of concerns
@@ -164,7 +164,7 @@ Complete architectural overhaul of the LogiTrack backend. Transformed from a mon
 
 ---
 
-### 🔒 Security Fixes
+###  Security Fixes
 
 #### CRITICAL Issues (5)
 1. **MD5 Password Hashing** → Replaced with bcrypt (12 rounds)

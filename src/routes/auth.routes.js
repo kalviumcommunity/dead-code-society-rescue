@@ -1,5 +1,7 @@
 const { Router } = require('express');
 const authController = require('../controllers/auth.controller');
+const validate = require('../middlewares/validate.middleware');
+const { registerSchema, loginSchema } = require('../validators/auth.validators');
 
 const router = Router();
 
@@ -9,7 +11,7 @@ const router = Router();
  * @body    {string} email, {string} password, {string} name
  * @returns {201} Created user
  */
-router.post('/register', authController.register);
+router.post('/register', validate(registerSchema), authController.register);
 
 /**
  * @route   POST /api/auth/login
@@ -17,6 +19,6 @@ router.post('/register', authController.register);
  * @body    {string} email, {string} password
  * @returns {200} User data and JWT token
  */
-router.post('/login', authController.login);
+router.post('/login', validate(loginSchema), authController.login);
 
 module.exports = router;

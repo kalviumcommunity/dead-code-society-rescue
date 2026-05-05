@@ -1,6 +1,8 @@
 const { Router } = require('express');
 const shipmentController = require('../controllers/shipment.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
+const validate = require('../middlewares/validate.middleware');
+const { createShipmentSchema, updateStatusSchema } = require('../validators/shipment.validators');
 
 const router = Router();
 
@@ -31,7 +33,7 @@ router.get('/:id', shipmentController.getShipment);
  * @body    {string} destination, {string} carrier, {number} weight, {string} origin
  * @returns {201} Created shipment
  */
-router.post('/', shipmentController.createShipment);
+router.post('/', validate(createShipmentSchema), shipmentController.createShipment);
 
 /**
  * @route   PATCH /api/shipments/:id/status
@@ -41,7 +43,7 @@ router.post('/', shipmentController.createShipment);
  * @body    {string} status
  * @returns {200} Updated shipment
  */
-router.patch('/:id/status', shipmentController.updateStatus);
+router.patch('/:id/status', validate(updateStatusSchema), shipmentController.updateStatus);
 
 /**
  * @route   DELETE /api/shipments/:id

@@ -10,7 +10,7 @@ var User = require('../models/User'); // manually load models
 var Shipment = require('../models/Shipment');
 
 // routes
-var routes = require('./routes');
+var routes = require('./routes/index');
 
 var app = express();
 

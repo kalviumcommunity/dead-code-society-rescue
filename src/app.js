@@ -16,7 +16,6 @@ app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-app.use(errorHandler)
 
 // database connection
 const mongoUrl = process.env.DATABASE_URL
@@ -38,6 +37,8 @@ app.use('/api/shipments', shipmentRoutes)
 app.get('/', (req, res) => {
   res.json({ message: 'LogiTrack Backend running' })
 })
+
+app.use(errorHandler)
 
 // start server
 const PORT = process.env.PORT || 3000

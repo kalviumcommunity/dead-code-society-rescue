@@ -28,7 +28,17 @@ exports.create = async (data, userId) => {
   })
 }
 
-exports.updateStatus = async (id, status, role) => {
+exports.updateStatus = async (id, status, userId, role) => {
+  const shipment = await Shipment.findById(id)
+
+  if (!shipment) {
+    throw new Error('Not found')
+  }
+
+  if (shipment.userId.toString() !== userId && role !== 'admin') {
+    throw new Error('No access')
+  }
+  
   if (status === 'delivered' && role !== 'admin') {
     throw new Error('Admins only')
   }

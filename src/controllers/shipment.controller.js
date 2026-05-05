@@ -32,6 +32,7 @@ exports.updateStatus = async (req, res, next) => {
     const data = await shipmentService.updateStatus(
       req.params.id,
       req.body.status,
+      req.userId,
       req.userRole
     )
     res.json(data)

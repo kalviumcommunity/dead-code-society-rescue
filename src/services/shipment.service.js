@@ -13,27 +13,22 @@ const generateTrackingId = () => {
 /**
  * Lists all shipments for a user
  * @param {string} userId - MongoDB user ID
- * @returns {Promise<Array>} Array of shipments with user details
+ * @returns {Promise<Array>} Array of shipments with user details (populated)
+ * @description Uses .populate() to fetch user details in a single query (2 queries total)
+ *              instead of N+1 queries (1 for shipments + N for each user)
  */
 const listShipments = async (userId) => {
-  const shipments = await Shipment.find({ userId });
+  // Use .populate() to fetch user data in the same query
+  // This reduces N+1 queries to 2 queries total
+  const shipments = await Shipment.find({ userId })
+    .populate('userId', 'name email role');
 
-  if (shipments.length === 0) {
-    return [];
-  }
-
-  // N+1 Problem: This loop calls DB for each shipment
-  // TODO: Replace with .populate() in Step 7
-  const finalData = [];
-  
-  for (const shipment of shipments) {
+  // Transform response to include user_details from populated userId field
+  return shipments.map(shipment => {
     const ship = shipment.toObject();
-    const user = await User.findById(ship.userId);
-    ship.user_details = user;
-    finalData.push(ship);
-  }
-
-  return finalData;
+    ship.user_details = ship.userId;
+    return ship;
+  });
 };
 
 /**

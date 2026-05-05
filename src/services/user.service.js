@@ -1,16 +1,21 @@
 const User = require('../models/User');
+const { NotFoundError } = require('../utils/errors.util');
 
 /**
- * Gets current user's profile
+ * Gets the current user's profile by ID
  * @param {string} userId - MongoDB user ID
  * @returns {Promise<Object>} User document
- * @throws {Error} If user not found
+ * @throws {NotFoundError} If user not found
+ *
+ * @example
+ * const user = await getProfile('507f1f77bcf86cd799439011');
+ * console.log(user.email); // user@example.com
  */
 const getProfile = async (userId) => {
   const user = await User.findById(userId);
   
   if (!user) {
-    throw new Error('User not found');
+    throw new NotFoundError('User not found');
   }
 
   return user;

@@ -5,101 +5,90 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // GET /shipments
-const listShipments = (req, res) => {
-  var token = req.headers['authorization'];
+const listShipments = async (req, res) => {
+  const token = req.headers['authorization'];
   if (!token) return res.json({ error: 'Unauthorized: missing token' });
-  jwt.verify(token, JWT_SECRET, function(err, decoded) {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) return res.json({ error: 'Unauthorized: invalid token' });
     req.userId = decoded.id;
     req.userRole = decoded.role;
-    Shipment.find({ userId: req.userId })
-      .then(function(shipments) {
-        var finalData = [];
-        var itemsProcessed = 0;
-        if (shipments.length === 0) {
-          return res.json({ shipments: [] });
-        }
-        for (var i = 0; i < shipments.length; i++) {
-          (function(idx) {
-            var ship = shipments[idx].toObject();
-            User.findById(ship.userId)
-              .then(function(u) {
-                ship.user_details = u;
-                finalData.push(ship);
-                itemsProcessed++;
-                if (itemsProcessed === shipments.length) {
-                  res.json({
-                    status: 'success',
-                    results: finalData.length,
-                    data: finalData
-                  });
-                }
-              });
-          })(i);
-        }
-      })
-      .catch(function(err) {
-        console.log(err);
-        res.json({ error: 'Fetch failed' });
+    try {
+      const shipments = await Shipment.find({ userId: req.userId });
+      const finalData = [];
+      if (shipments.length === 0) {
+        return res.json({ shipments: [] });
+      }
+      for (let i = 0; i < shipments.length; i++) {
+        const ship = shipments[i].toObject();
+        const u = await User.findById(ship.userId);
+        ship.user_details = u;
+        finalData.push(ship);
+      }
+      res.json({
+        status: 'success',
+        results: finalData.length,
+        data: finalData
       });
+    } catch (err) {
+      console.log(err);
+      res.json({ error: 'Fetch failed' });
+    }
   });
 };
 
 // GET /shipments/:id
-const getShipment = (req, res) => {
-  var token = req.headers['authorization'];
+const getShipment = async (req, res) => {
+  const token = req.headers['authorization'];
   if (!token) return res.json({ error: 'Unauthorized: missing token' });
-  jwt.verify(token, JWT_SECRET, function(err, decoded) {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) return res.json({ error: 'Unauthorized: invalid token' });
     req.userId = decoded.id;
     req.userRole = decoded.role;
-    Shipment.findById(req.params.id)
-      .then(function(shipment) {
-        if (!shipment) {
-          return res.json({ error: 'Not found' });
-        }
-        if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
-          return res.json({ error: 'No access to this shipment' });
-        }
-        res.json(shipment);
-      })
-      .catch(function(err) {
-        res.json({ error: 'Error on findById' });
-      });
+    try {
+      const shipment = await Shipment.findById(req.params.id);
+      if (!shipment) {
+        return res.json({ error: 'Not found' });
+      }
+      if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+        return res.json({ error: 'No access to this shipment' });
+      }
+      res.json(shipment);
+    } catch (err) {
+      res.json({ error: 'Error on findById' });
+    }
   });
 };
 
 // POST /shipments
-const createShipment = (req, res) => {
-  var token = req.headers['authorization'];
+const createShipment = async (req, res) => {
+  const token = req.headers['authorization'];
   if (!token) return res.json({ error: 'Unauthorized: missing token' });
-  jwt.verify(token, JWT_SECRET, function(err, decoded) {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) return res.json({ error: 'Unauthorized: invalid token' });
     req.userId = decoded.id;
     req.userRole = decoded.role;
-    var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
-    var newShipment = new Shipment({
-      ...req.body,
-      trackingId: trackId,
-      userId: req.userId,
-      status: 'pending'
-    });
-    newShipment.save()
-      .then(function(saved) {
-        res.json(saved);
-      })
-      .catch(function(err) {
-        console.log('Error saving shipment');
-        res.json({ error: err });
+    try {
+      const trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
+      const newShipment = new Shipment({
+        ...req.body,
+        trackingId: trackId,
+        userId: req.userId,
+        status: 'pending'
       });
+      const saved = await newShipment.save();
+      res.json(saved);
+    } catch (err) {
+      console.log('Error saving shipment');
+      res.json({ error: err });
+    }
   });
 };
 
 // PATCH /shipments/:id/status
-const updateShipmentStatus = (req, res) => {
-  var token = req.headers['authorization'];
+const updateShipmentStatus = async (req, res) => {
+  const token = req.headers['authorization'];
   if (!token) return res.json({ error: 'Unauthorized: missing token' });
-  jwt.verify(token, JWT_SECRET, function(err, decoded) {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) return res.json({ error: 'Unauthorized: invalid token' });
     req.userId = decoded.id;
     req.userRole = decoded.role;
@@ -108,31 +97,29 @@ const updateShipmentStatus = (req, res) => {
         return res.json({ error: 'Admins only can deliver' });
       }
     }
-    Shipment.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true })
-      .then(function(doc) {
-        res.json(doc);
-      })
-      .catch(function(err) {
-        res.json({ error: 'Update failed' });
-      });
+    try {
+      const doc = await Shipment.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+      res.json(doc);
+    } catch (err) {
+      res.json({ error: 'Update failed' });
+    }
   });
 };
 
 // DELETE /shipments/:id
-const deleteShipment = (req, res) => {
-  var token = req.headers['authorization'];
+const deleteShipment = async (req, res) => {
+  const token = req.headers['authorization'];
   if (!token) return res.json({ error: 'Unauthorized: missing token' });
-  jwt.verify(token, JWT_SECRET, function(err, decoded) {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) return res.json({ error: 'Unauthorized: invalid token' });
     req.userId = decoded.id;
     req.userRole = decoded.role;
-    Shipment.findByIdAndDelete(req.params.id)
-      .then(function() {
-        res.json({ message: 'Deleted ' + req.params.id });
-      })
-      .catch(function(e) {
-        res.json({ error: 'Delete error' });
-      });
+    try {
+      await Shipment.findByIdAndDelete(req.params.id);
+      res.json({ message: 'Deleted ' + req.params.id });
+    } catch (e) {
+      res.json({ error: 'Delete error' });
+    }
   });
 };
 

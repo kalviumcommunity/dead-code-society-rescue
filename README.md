@@ -2,16 +2,16 @@
 
 > REST API for shipment tracking and logistics management. Built with Node.js, Express, MongoDB, and bcrypt security.
 
-## ✨ Features
+## Features
 
-- 🔐 **Secure Authentication** - JWT tokens with bcrypt password hashing (12 salt rounds)
-- ✅ **Input Validation** - Joi schema validation on all request bodies with NoSQL injection prevention
-- 🗃️ **Database Optimization** - Mongoose populate() to eliminate N+1 query problems
-- 🚨 **Error Handling** - Centralized error middleware with custom error classes
-- 📝 **Clean Architecture** - MVC pattern with clear separation of concerns
-- 📚 **Full Documentation** - JSDoc on all functions + complete API reference
+- **Secure Authentication** - JWT tokens with bcrypt password hashing (12 salt rounds)
+- **Input Validation** - Joi schema validation on all request bodies with NoSQL injection prevention
+- **Database Optimization** - Mongoose populate() to eliminate N+1 query problems
+- **Error Handling** - Centralized error middleware with custom error classes
+- **Clean Architecture** - MVC pattern with clear separation of concerns
+- **Full Documentation** - JSDoc on all functions + complete API reference
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
@@ -23,7 +23,7 @@
 | **Input Validation** | Joi | 17.x |
 | **Dev Tools** | nodemon | 3.x |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone and Install
 
@@ -69,7 +69,7 @@ npm start
 
 Server will be running on `http://localhost:3000`
 
-## 📋 Environment Variables
+## Environment Variables
 
 | Variable | Example | Required | Description |
 |----------|---------|----------|-------------|
@@ -78,7 +78,7 @@ Server will be running on `http://localhost:3000`
 | `JWT_SECRET` | `your-secret-key-min-32-chars` | Yes | Secret for signing JWT tokens (min 32 chars) |
 | `NODE_ENV` | `development` | Yes | Environment mode (development, production, test) |
 
-## 🔌 API Reference
+## API Reference
 
 ### Authentication Endpoints
 
@@ -233,27 +233,27 @@ Response: 200 OK
 }
 ```
 
-## 🏗 Architecture
+## Architecture
 
 ```
-📨 Request
-    ↓
-🛣️ Routes (auth.routes.js, shipment.routes.js, user.routes.js)
-    ↓
-🔐 Auth Middleware (verifies JWT token)
-    ↓
-✅ Validation Middleware (Joi schema validation)
-    ↓
-🎮 Controllers (auth.controller.js, shipment.controller.js, user.controller.js)
-    ↓
-⚙️ Services (auth.service.js, shipment.service.js, user.service.js)
-    ↓
-🗃️ Models (User.js, Shipment.js via Mongoose)
-    ↓
-💾 MongoDB Database
+Request
+  ↓
+Routes (auth.routes.js, shipment.routes.js, user.routes.js)
+  ↓
+Auth Middleware (verifies JWT token)
+  ↓
+Validation Middleware (Joi schema validation)
+  ↓
+Controllers (auth.controller.js, shipment.controller.js, user.controller.js)
+  ↓
+Services (auth.service.js, shipment.service.js, user.service.js)
+  ↓
+Models (User.js, Shipment.js via Mongoose)
+  ↓
+MongoDB Database
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -288,16 +288,16 @@ src/
     └── response.util.js     # Response formatting
 ```
 
-## 🔐 Security Features
+## Security Features
 
-✅ **Passwords**: bcrypt with 12 salt rounds (makes brute-force attacks infeasible)
-✅ **Input Validation**: Joi schema validation sanitizes all inputs
-✅ **Unknown Field Stripping**: Extra fields removed before DB operations (NoSQL injection prevention)
-✅ **JWT Tokens**: Signed with secret, expire after 12 hours
-✅ **Error Handling**: Generic messages in production (no info leakage)
-✅ **Permission Checks**: Only owners/admins can access/modify shipments
+- **Passwords**: bcrypt with 12 salt rounds (makes brute-force attacks infeasible)
+- **Input Validation**: Joi schema validation sanitizes all inputs
+- **Unknown Field Stripping**: Extra fields removed before DB operations (NoSQL injection prevention)
+- **JWT Tokens**: Signed with secret, expire after 12 hours
+- **Error Handling**: Generic messages in production (no info leakage)
+- **Permission Checks**: Only owners/admins can access/modify shipments
 
-## 🚨 Error Responses
+## Error Responses
 
 All errors follow this format:
 
@@ -320,14 +320,14 @@ HTTP Status Codes:
 - `422` - Validation Error
 - `500` - Internal Server Error
 
-## 📊 Performance Optimizations
+## Performance Optimizations
 
 ✅ **N+1 Query Fix**: Mongoose `.populate()` reduces 101 queries to 2
 ✅ **Connection Pooling**: MongoDB connection reuse
 ✅ **Async/Await**: Non-blocking operations throughout
 ✅ **Input Validation**: Prevents invalid data from reaching DB
 
-## 🧪 Testing
+## Testing
 
 Run the health check:
 ```bash
@@ -346,7 +346,7 @@ curl -X POST http://localhost:3000/api/auth/register \
   }'
 ```
 
-## 📝 Development
+## Development
 
 ### Available Scripts
 
@@ -378,7 +378,7 @@ npm test         # Run tests (if configured)
 
 MIT
 
-## 👤 Author
+## Author
 
 Built by the LogiTrack Team
 
@@ -390,4 +390,4 @@ Contributions are welcome! Please read CONTRIBUTING.md for guidelines.
 
 **For detailed changes, see [CHANGELOG.md](CHANGELOG.md)**
 
-**Happy shipping! 🚚**
+Happy shipping!

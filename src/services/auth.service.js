@@ -12,7 +12,10 @@ exports.register = async (data) => {
     password: hashed
   })
 
-  return { message: 'Account created', user }
+  const userResponse = user.toObject()
+  delete userResponse.password
+
+  return { message: 'Account created', user: userResponse }
 }
 
 exports.login = async (data) => {

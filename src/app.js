@@ -20,14 +20,17 @@ app.use(bodyParser.urlencoded({ extended: true }))
 // database connection
 const mongoUrl = process.env.DATABASE_URL
 
-mongoose.connect(mongoUrl)
-  .then(() => {
-    console.log('--- DATABASE CONNECTED ---')
-  })
-  .catch(err => {
-    console.log('DATABASE CONNECTION ERROR:')
-    console.log(err)
-  })
+mongoose.connect(mongoUrl, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log('--- DATABASE CONNECTED ---')
+})
+.catch(err => {
+  console.log('DATABASE CONNECTION ERROR:')
+  console.log(err)
+})
 
 // routes
 app.use('/api/auth', authRoutes)

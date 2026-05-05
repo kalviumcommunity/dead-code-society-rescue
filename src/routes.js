@@ -1,16 +1,21 @@
+// SMELL: [MEDIUM] Uses `var` throughout; prefer `const`/`let` for clearer scoping.
 var express = require('express');
 var router = express.Router();
+// SMELL: [MEDIUM] This route file requires models and performs business logic — it's a God file.
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
+// SMELL: [CRITICAL] MD5 is used for password hashing. MD5 is not suitable for password storage.
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [LOW] Unused builtin imports clutter the file and hide real dependencies.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [HIGH] JWT secret fallback to a hardcoded value — secrets must not be embedded in code.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -19,11 +24,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] Spreading `req.body` directly into the model allows NoSQL injection and unexpected fields.
+    // SMELL: [HIGH] No input validation — request payload is trusted without schema checks.
     var userData = { ...req.body };
     
-    // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 used for password hashing. Replace with bcrypt hashing with a cost factor.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -31,7 +36,7 @@ router.post('/register', function(req, res) {
     newUser.save()
         .then(function(user) {
             console.log('Registered user: ' + user.email);
-            // using 200 for everything, its simpler for my frontend dev
+            // SMELL: [MEDIUM] Returns 200 on creation; should be 201 Created.
             res.json({
                 success: true,
                 message: 'Account created!',
@@ -46,14 +51,14 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
+    // SMELL: [HIGH] No rate limiting or account lockout on failed logins — brute-force risk.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
                 return res.json({ error: 'No user found with that email' });
             }
 
-            // check md5 password
+            // SMELL: [CRITICAL] MD5 comparison; insecure and vulnerable to rainbow table attacks.
             if (user.password === md5(req.body.password)) {
                 // sign jwt
                 var token = jwt.sign(
@@ -99,7 +104,7 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
+                // SMELL: [HIGH] N+1 problem — fetching associated user for each shipment in a loop.
                 var finalData = [];
                 var itemsProcessed = 0;
 
@@ -124,7 +129,7 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
-                            }); // silent failure if this fails
+                            }); // SMELL: [MEDIUM] Missing .catch() on inner DB call — silent failures possible
                     })(i);
                 }
             })
@@ -181,7 +186,7 @@ router.post('/shipments', function(req, res) {
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
-        // Use spread to save time, mongoose will handle validation... maybe
+        // SMELL: [HIGH] Spreading req.body directly - no validation and allows unexpected fields.
         var newShipment = new Shipment({
             ...req.body,
             trackingId: trackId,
@@ -241,7 +246,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [HIGH] No permission check on delete — any authenticated user can delete any shipment.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -271,7 +276,7 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            }); // SMELL: [MEDIUM] Missing .catch() on User.findById — errors will be silent
     });
 });
 

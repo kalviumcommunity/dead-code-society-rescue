@@ -1,8 +1,8 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-var userSchema = new Schema({
+const userSchema = new Schema({
     name: {
         type: String,
         required: true
@@ -18,6 +18,7 @@ var userSchema = new Schema({
     },
     role: {
         type: String,
+         // SMELL: [MEDIUM] Missing enum constraint on role field. Add enum: ['user', 'admin']
         default: 'user' // either 'user' or 'admin'
     },
     createdAt: {

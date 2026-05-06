@@ -1,3 +1,8 @@
+# Environment Variables - CRITICAL: Never commit real secrets
+.env
+.env.local
+.env.*.local
+
 # Logs
 logs
 *.log
@@ -42,3 +47,13 @@ typings/
 # Build files
 dist/
 build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# MongoDB local data
+data/

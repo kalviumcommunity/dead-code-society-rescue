@@ -3,7 +3,8 @@ var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
-var md5 = require('md5'); // md5 hashing
+var hashUtil = require('./utils/hash.util'); // bcrypt helpers
+var auth = require('./middlewares/auth.middleware'); // central auth middleware
 var mongoose = require('mongoose'); // for id checking
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
@@ -11,74 +12,68 @@ var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
-var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+var JWT_SECRET = process.env.JWT_SECRET || 'devsecret';
 
 // ---------------------------------------------------------
 // AUTH ROUTES
 // ---------------------------------------------------------
 
 // POST /register - make a new account
-router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
-    var userData = { ...req.body };
-    
-    // md5 is fine for hobby projects, its very fast
-    userData.password = md5(userData.password);
+router.post('/register', async function(req, res) {
+    try {
+        // whitelist input fields instead of blindly spreading req.body
+        var userData = {
+            name: req.body.name,
+            email: req.body.email,
+            password: req.body.password
+        };
 
-    var newUser = new User(userData);
-    
-    newUser.save()
-        .then(function(user) {
-            console.log('Registered user: ' + user.email);
-            // using 200 for everything, its simpler for my frontend dev
-            res.json({
-                success: true,
-                message: 'Account created!',
-                user: user
-            });
-        })
-        .catch(function(err) {
-            console.log('Error in register: ' + err);
-            res.json({ success: false, error: 'Cannot register' });
+        // hash password with bcrypt
+        userData.password = await hashUtil.hashPassword(userData.password);
+
+        var newUser = new User(userData);
+        var user = await newUser.save();
+        console.log('Registered user: ' + user.email);
+        res.status(201).json({
+            success: true,
+            message: 'Account created!',
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
         });
+    } catch (err) {
+        console.log('Error in register: ' + err);
+        res.status(500).json({ success: false, error: 'Cannot register' });
+    }
 });
 
 // POST /login - get a token
-router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
-    User.findOne({ email: req.body.email })
-        .then(function(user) {
-            if (!user) {
-                return res.json({ error: 'No user found with that email' });
-            }
+router.post('/login', async function(req, res) {
+    try {
+        var user = await User.findOne({ email: req.body.email });
+        if (!user) return res.status(404).json({ error: 'No user found with that email' });
 
-            // check md5 password
-            if (user.password === md5(req.body.password)) {
-                // sign jwt
-                var token = jwt.sign(
-                    { id: user._id, role: user.role }, 
-                    JWT_SECRET, 
-                    { expiresIn: '12h' }
-                );
+        var isValid = await hashUtil.comparePassword(req.body.password, user.password);
+        if (!isValid) return res.status(401).json({ error: 'Password does not match' });
 
-                res.json({
-                    msg: 'Login OK',
-                    token: token,
-                    data: {
-                        name: user.name,
-                        email: user.email,
-                        role: user.role
-                    }
-                });
-            } else {
-                res.json({ error: 'Password does not match' });
+        var token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
+
+        res.json({
+            msg: 'Login OK',
+            token: token,
+            data: {
+                name: user.name,
+                email: user.email,
+                role: user.role
             }
-        })
-        .catch(function(err) {
-            console.log('Login crash: ' + err);
-            res.json({ error: 'Server error' });
         });
+    } catch (err) {
+        console.log('Login crash: ' + err);
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // ---------------------------------------------------------
@@ -86,53 +81,21 @@ router.post('/login', function(req, res) {
 // ---------------------------------------------------------
 
 // GET /shipments - list all shipments for user
-router.get('/shipments', function(req, res) {
-    // --- AUTH BLOCK START ---
-    var token = req.headers['authorization'];
-    if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
-    jwt.verify(token, JWT_SECRET, function(err, decoded) {
-        if (err) return res.json({ error: 'Unauthorized: invalid token' });
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
-        // --- AUTH BLOCK END ---
+router.get('/shipments', auth, async function(req, res) {
+    try {
+        // Use populate to avoid N+1 queries
+        const shipments = await Shipment.find({ userId: req.userId })
+            .populate('userId', 'name email');
 
-        Shipment.find({ userId: req.userId })
-            .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
-                var finalData = [];
-                var itemsProcessed = 0;
-
-                if (shipments.length === 0) {
-                    return res.json({ shipments: [] });
-                }
-
-                for (var i = 0; i < shipments.length; i++) {
-                    (function(idx) {
-                        var ship = shipments[idx].toObject();
-                        // Calling DB inside a loop is standard right?
-                        User.findById(ship.userId)
-                            .then(function(u) {
-                                ship.user_details = u;
-                                finalData.push(ship);
-                                itemsProcessed++;
-
-                                if (itemsProcessed === shipments.length) {
-                                    res.json({
-                                        status: 'success',
-                                        results: finalData.length,
-                                        data: finalData
-                                    });
-                                }
-                            }); // silent failure if this fails
-                    })(i);
-                }
-            })
-            .catch(function(err) {
-                console.log(err);
-                res.json({ error: 'Fetch failed' });
-            });
-    });
+        return res.json({
+            status: 'success',
+            results: shipments.length,
+            data: shipments
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Fetch failed' });
+    }
 });
 
 // GET /shipments/:id - get one shipment

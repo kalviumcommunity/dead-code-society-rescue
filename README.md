@@ -1,57 +1,109 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+REST API for shipment tracking built with Node.js, Express, MongoDB, bcrypt, JWT, and Joi.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Layer | Technology |
+|-------|------------|
+| Runtime | Node.js |
+| Framework | Express |
+| Database | MongoDB + Mongoose |
+| Auth | JSON Web Tokens |
+| Password Hashing | bcrypt |
+| Validation | Joi |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Quick Start
 
-### 1. Installation
-Clone the repo and install the dependencies:
+1. Install dependencies.
+
 ```bash
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+2. Copy the example environment file.
+
+```bash
+copy .env.example .env
+```
+
+3. Update `.env` with your values.
+
+4. Start MongoDB locally.
+
+5. Run the app.
+
 ```bash
 npm run dev
 ```
-Or start in production:
-```bash
-npm start
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| PORT | No | Port for the HTTP server |
+| DATABASE_URL | Yes | MongoDB connection string |
+| JWT_SECRET | Yes | Secret used to sign tokens |
+| NODE_ENV | No | Use `production` in deployed environments |
+
+## API Endpoints
+
+All endpoints are mounted under `/api`.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/register` | No | Create a new user |
+| POST | `/auth/login` | No | Login and receive a JWT |
+| GET | `/users/profile` | Yes | Fetch the current user profile |
+| GET | `/shipments` | Yes | List shipments for the current user |
+| POST | `/shipments` | Yes | Create a shipment |
+| GET | `/shipments/:id` | Yes | Fetch one shipment |
+| PATCH | `/shipments/:id/status` | Yes | Update shipment status |
+| DELETE | `/shipments/:id` | Yes | Delete a shipment |
+| GET | `/status` | No | Health check |
+| GET | `/ping` | No | Lightweight liveness check |
+
+## Architecture
+
+Request -> Route -> Controller -> Service -> Model -> MongoDB
+
+```
+Request
+	|
+	v
+Router
+	|
+	v
+Controller
+	|
+	v
+Service
+	|
+	v
+Model
+	|
+	v
+MongoDB
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## Validation Rules
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+- Email must be valid.
+- Password must be at least 8 characters and include an uppercase letter and a number.
+- Unknown fields are stripped before data reaches the service layer.
+- Shipment status is restricted to `pending`, `in-progress`, `delivered`, or `cancelled`.
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+## Security Notes
 
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
+- Passwords are hashed with bcrypt using 12 salt rounds.
+- `.env` is ignored by git.
+- JWT verification is centralized in middleware.
+- Shipment listing uses `populate` instead of an N+1 loop.
 
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+## Scripts
+
+```bash
+npm run dev
+npm start
+npm test
+```

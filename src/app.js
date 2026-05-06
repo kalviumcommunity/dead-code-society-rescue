@@ -1,53 +1,66 @@
-require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+require('dotenv').config()
+const express = require('express')
+const mongoose = require('mongoose')
+const cors = require('cors')
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+// Middleware
+const errorHandler = require('./middlewares/error.middleware')
 
-// routes
-var routes = require('./routes');
+// Routes
+const authRoutes = require('./routes/auth.routes')
+const shipmentRoutes = require('./routes/shipment.routes')
 
-var app = express();
+const app = express()
 
-// middleware setup
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Middleware setup
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
+// Database connection
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack'
+mongoose
+  .connect(mongoUrl, {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
+    useUnifiedTopology: true
+  })
+  .then(() => {
+    console.log('✓ Database connected successfully')
+  })
+  .catch((err) => {
+    console.error('✗ Database connection error:', err.message)
+    process.exit(1)
+  })
+
+// Health check route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'LogiTrack Backend is running',
+    version: '2.0.0'
+  })
 })
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' })
 })
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
-});
 
-// register routes
-app.use('/api', routes); // all routes under /api
+// API routes
+app.use('/api/auth', authRoutes)
+app.use('/api/shipments', shipmentRoutes)
 
-// welcome route
-app.get('/', function(req, res) {
-    res.json({ message: 'LogiTrack Backend running' });
-});
+// 404 handler
+app.use((req, res, next) => {
+  const { NotFoundError } = require('./utils/errors.util')
+  next(new NotFoundError(`Route ${req.originalUrl} not found`))
+})
 
-// no 404 handler here, let express handle it for now
+// Centralized error handler MUST be last
+app.use(errorHandler)
 
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
+// Start server
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');
 });

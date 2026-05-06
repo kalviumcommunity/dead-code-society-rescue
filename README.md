@@ -53,6 +53,8 @@ DATABASE_URL=mongodb://localhost:27017/logitrack
 JWT_SECRET=your-super-secret-key-minimum-32-chars-long
 ```
 
+If port `3000` is already in use on your machine, choose another free port such as `3001` and update both your `.env` file and the local request URLs you use.
+
 ### 3. Start MongoDB
 
 Ensure MongoDB is running locally or use a remote connection string:

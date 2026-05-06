@@ -1,57 +1,95 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# ShipAPI - Shipment Tracking Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+REST API for shipment tracking built with Node.js, Express, and MongoDB.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Layer | Technology |
+|------|------------|
+| Runtime | Node.js |
+| Framework | Express |
+| Database | MongoDB + Mongoose |
+| Auth | JWT (`jsonwebtoken`) |
+| Validation | Joi |
+| Hashing | bcrypt |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Quick Start
 
-### 1. Installation
-Clone the repo and install the dependencies:
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-### 2. Start the Engine
-Run the development server:
-```bash
+# 2. Configure environment
+cp .env.example .env
+
+# 3. Fill values in .env
+# DATABASE_URL=mongodb://localhost:27017/logitrack
+# JWT_SECRET=your-very-long-secret
+
+# 4. Run development server
 npm run dev
 ```
-Or start in production:
-```bash
-npm start
+
+## Environment Variables
+
+| Variable | Example | Required | Description |
+|----------|---------|----------|-------------|
+| `PORT` | `3000` | Yes | HTTP server port |
+| `DATABASE_URL` | `mongodb://localhost:27017/logitrack` | Yes | MongoDB connection string |
+| `JWT_SECRET` | `a-very-long-random-secret` | Yes | JWT signing secret (minimum 32 chars recommended) |
+| `NODE_ENV` | `development` | Yes | Runtime mode (`development` or `production`) |
+
+## API Reference
+
+All endpoints are under `/api`.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/status` | No | Service status and uptime |
+| GET | `/ping` | No | Simple health ping |
+| POST | `/auth/register` | No | Register new user |
+| POST | `/auth/login` | No | Login and receive JWT |
+| GET | `/profile` | Yes | Get authenticated user profile |
+| GET | `/shipments` | Yes | List shipments for authenticated user |
+| GET | `/shipments/:id` | Yes | Get shipment by id (owner or admin) |
+| POST | `/shipments` | Yes | Create shipment |
+| PATCH | `/shipments/:id/status` | Yes | Update shipment status |
+| DELETE | `/shipments/:id` | Yes | Delete shipment |
+
+## Sample Auth Header
+
+```http
+Authorization: Bearer <your-jwt-token>
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## Architecture
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+```text
+Request
+	-> Router (src/routes)
+			-> Controller (src/controllers)
+					-> Service (src/services)
+							-> Model (src/models)
+									-> MongoDB
+```
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+## Project Structure
 
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
+```text
+src/
+	app.js
+	server.js
+	controllers/
+	middlewares/
+	models/
+	routes/
+	services/
+	utils/
+	validators/
+```
 
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+## Notes
+
+- Passwords are hashed with bcrypt (12 salt rounds).
+- All POST/PATCH request bodies are validated with Joi.
+- Errors are handled by centralized middleware.

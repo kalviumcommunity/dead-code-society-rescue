@@ -1,57 +1,72 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack API
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+LogiTrack is a backend API for logistics and shipment tracking. It handles user registration, login, profile access, shipment creation, shipment lookup, shipment updates, and shipment deletion behind JWT-based authentication.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Area | Technology |
+|------|------------|
+| Runtime | Node.js |
+| Framework | Express |
+| Database | MongoDB with Mongoose |
+| Auth | JSON Web Tokens |
+| Validation | Joi |
+| Password Hashing | bcrypt |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Quick Start
 
-### 1. Installation
-Clone the repo and install the dependencies:
-```bash
-npm install
+1. Clone the repository.
+2. Install dependencies with `npm install`.
+3. Copy `.env.example` to `.env` and set `DATABASE_URL` and `JWT_SECRET`.
+4. Start the API with `npm run dev`.
+
+If MongoDB is unavailable locally, the public health routes will still respond, but registration, login, and shipment APIs require a database connection.
+
+## Environment Variables
+
+| Name | Example | Required | Description |
+|------|---------|----------|-------------|
+| `PORT` | `3000` | No | Port the HTTP server listens on. |
+| `DATABASE_URL` | `mongodb://localhost:27017/logitrack` | Yes | MongoDB connection string. |
+| `JWT_SECRET` | `super_secret_logitrack_2019_dont_share` | Yes | Secret used to sign and verify JWTs. |
+
+## API Reference
+
+All API routes are mounted under `/api`.
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|---------------|-------------|
+| GET | `/` | No | Root health message from the app entrypoint. |
+| GET | `/api/status` | No | Returns runtime status and process information. |
+| GET | `/api/ping` | No | Lightweight ping endpoint. |
+| POST | `/api/register` | No | Creates a new user with Joi validation and bcrypt hashing. |
+| POST | `/api/login` | No | Authenticates a user and returns a JWT. |
+| GET | `/api/profile` | Yes | Returns the authenticated user's profile. |
+| GET | `/api/shipments` | Yes | Lists shipments visible to the current user. |
+| GET | `/api/shipments/:id` | Yes | Returns a single shipment when the user has access. |
+| POST | `/api/shipments` | Yes | Creates a shipment for the authenticated user. |
+| PATCH | `/api/shipments/:id/status` | Yes | Updates shipment status after authorization checks. |
+| DELETE | `/api/shipments/:id` | Yes | Deletes a shipment after authorization checks. |
+
+## Architecture
+
+```text
+HTTP Request
+	|
+	v
+src/routes/index.js
+	|
+	+--> controllers/
+	|       |
+	|       +--> services/
+	|               |
+	|               +--> models/
+	|               +--> utils/
+	|
+	+--> middlewares/
+			|
+			+--> validators/
+			+--> utils/errors.util.js
 ```
 
-### 2. Start the Engine
-Run the development server:
-```bash
-npm run dev
-```
-Or start in production:
-```bash
-npm start
-```
-
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
-
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
-
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+Controllers read the request and send the response. Services hold business logic. Models define MongoDB schemas. Middlewares handle auth, validation, and errors. Utilities provide reusable helpers such as hashing, JWT signing, and response serialization.

@@ -1,3 +1,8 @@
+/**
+ * Shipment model (MongoDB schema).
+ * Stores shipment tracking information.
+ */
+
 const mongoose = require("mongoose");
 
 const shipmentSchema = new mongoose.Schema({
@@ -9,24 +14,28 @@ const shipmentSchema = new mongoose.Schema({
   origin: {
     type: String,
     required: true,
+    trim: true,
   },
   destination: {
     type: String,
     required: true,
+    trim: true,
   },
   status: {
     type: String,
-    default: "pending", // pending, in-progress, delivered, cancelled
+    enum: ["pending", "in-progress", "delivered", "cancelled"],
+    default: "pending",
   },
   weight: {
     type: Number,
     required: true,
+    min: 0.1,
   },
   carrier: {
     type: String,
     required: true,
+    trim: true,
   },
-  // which user this shipment belongs to
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -42,7 +51,7 @@ const shipmentSchema = new mongoose.Schema({
   },
 });
 
-// hook for pre-save on model
+// Update updatedAt before save
 shipmentSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();

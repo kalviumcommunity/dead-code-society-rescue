@@ -3,6 +3,13 @@ const { AppError } = require('../utils/errors');
 /**
  * Centralized error handling middleware
  * Must be registered LAST in app.js with 4 parameters (err, req, res, next)
+ * Extracts statusCode from error or defaults to 500, formats response with error details
+ * Includes stack trace only in development environment
+ * @param {Error} err - Error object (typically custom AppError subclass)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function (unused but required)
+ * @returns {void} Sends JSON error response with appropriate HTTP status
  */
 exports.errorHandler = (err, req, res, next) => {
     // Default to 500 if no status code
@@ -23,7 +30,10 @@ exports.errorHandler = (err, req, res, next) => {
 
 /**
  * 404 handler middleware
- * Must be registered before the error handler
+ * Must be registered before the error handler to catch unmatched routes
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {void} Sends 404 JSON response with NotFoundError details
  */
 exports.notFound = (req, res) => {
     res.status(404).json({

@@ -4,7 +4,13 @@ const response = require('../utils/response');
 
 /**
  * POST /register
- * Create a new user account
+ * Create a new user account with validated and hashed password
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Validated request body (name, email, password)
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function for error handling
+ * @returns {void} Sends 201 JSON response with created user or error via next()
+ * @throws {Error} Passed to next() for centralized error handling
  */
 exports.register = async (req, res, next) => {
     try {
@@ -20,7 +26,13 @@ exports.register = async (req, res, next) => {
 
 /**
  * POST /login
- * Authenticate user and return JWT token
+ * Authenticate user with email and password, return JWT token
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Validated request body (email, password)
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function for error handling
+ * @returns {void} Sends 200 JSON response with token and user data or error via next()
+ * @throws {Error} Passed to next() for centralized error handling
  */
 exports.login = async (req, res, next) => {
     try {
@@ -44,7 +56,13 @@ exports.login = async (req, res, next) => {
 
 /**
  * GET /profile
- * Get current user's profile
+ * Get current authenticated user's profile
+ * @param {Object} req - Express request object
+ * @param {string} req.userId - Authenticated user's MongoDB ObjectId
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function for error handling
+ * @returns {void} Sends 200 JSON response with user profile or error via next()
+ * @throws {Error} Passed to next() for centralized error handling
  */
 exports.getProfile = async (req, res, next) => {
     try {

@@ -1,5 +1,10 @@
 /**
  * Send success response
+ * Wraps data in success envelope with HTTP status code
+ * @param {Object} res - Express response object
+ * @param {*} data - Response data (object, array, string, etc.)
+ * @param {number} [statusCode=200] - HTTP status code
+ * @returns {void}
  */
 exports.success = (res, data, statusCode = 200) => {
     res.status(statusCode).json({
@@ -10,7 +15,11 @@ exports.success = (res, data, statusCode = 200) => {
 
 /**
  * Send error response
- * Accepts either a string message or an object with message and errors array
+ * Handles both simple string messages and validation error objects with details
+ * @param {Object} res - Express response object
+ * @param {string|Object} message - Error message (string) or object with message and errors array
+ * @param {number} [statusCode=400] - HTTP status code
+ * @returns {void}
  */
 exports.error = (res, message, statusCode = 400) => {
     const errorBody = {
@@ -32,7 +41,11 @@ exports.error = (res, message, statusCode = 400) => {
 };
 
 /**
- * Send data response
+ * Send data response with default success wrapper
+ * @param {Object} res - Express response object
+ * @param {*} data - Response data to send
+ * @param {number} [statusCode=200] - HTTP status code
+ * @returns {void}
  */
 exports.data = (res, data, statusCode = 200) => {
     res.status(statusCode).json(data);

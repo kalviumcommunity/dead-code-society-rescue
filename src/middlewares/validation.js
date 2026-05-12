@@ -2,7 +2,12 @@ const response = require('../utils/response');
 
 /**
  * Validation middleware factory
- * Usage: router.post('/route', validate(schema), controller.action)
+ * Creates middleware that validates req.body against Joi schema
+ * On success, replaces req.body with cleaned/validated data and calls next()
+ * On failure, returns 422 with detailed validation errors
+ * @param {Object} schema - Joi schema object for validation
+ * @returns {Function} Express middleware function for route validation
+ * @throws {Error} Sends 422 response with validation errors array if validation fails
  */
 exports.validate = (schema) => {
     return (req, res, next) => {

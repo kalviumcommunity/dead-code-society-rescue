@@ -1,58 +1,94 @@
-require('dotenv').config();
-// SMELL: [HIGH] Using var instead of const/let. Should use const for all imports.
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
-// SMELL: [MEDIUM] Models imported but not used in this file. Only used in routes.
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+// Import routes
+const authRoutes = require("./routes/authRoutes");
+const shipmentRoutes = require("./routes/shipmentRoutes");
+const healthRoutes = require("./routes/healthRoutes");
 
-// routes
-var routes = require('./routes');
+// Import middlewares
+const { errorHandler } = require("./middlewares/errorHandler");
 
-var app = express();
+const app = express();
 
-// middleware setup
+// Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// SMELL: [HIGH] Promise chain using .then/.catch instead of async/await. Also no proper error logging.
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
+/**
+ * Database connection with proper async/await and error handling
+ */
+async function connectDatabase() {
+  try {
+    const mongoUrl =
+      process.env.DATABASE_URL || "mongodb://localhost:27017/logitrack";
+    await mongoose.connect(mongoUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useCreateIndex: true,
+      useFindAndModify: false,
+    });
+    console.log("✓ DATABASE CONNECTED");
+  } catch (err) {
+    console.error("✗ DATABASE CONNECTION ERROR:", err.message);
+    process.exit(1); // Exit if DB connection fails
+  }
+}
+
+// Connect to database
+connectDatabase();
+
+// Root route
+app.get("/", (req, res) => {
+  res.json({ message: "LogiTrack Backend running" });
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
+// Register route modules
+app.use("/api/auth", authRoutes);
+app.use("/api/shipments", shipmentRoutes);
+app.use("/api", healthRoutes);
 
-// welcome route
-app.get('/', function(req, res) {
-    res.json({ message: 'LogiTrack Backend running' });
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Route not found",
+  });
 });
 
-// no 404 handler here, let express handle it for now
-SMELL: [MEDIUM] No error handling for server startup. Process silently fails if port is in use.
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
-    console.log('Server is alive on port ' + PORT);
-    console.log('Wait for MongoDB before testing...');
-});
+// Global error handler middleware (must be last)
+app.use(errorHandler);
 
-// exporting for testing later
+/**
+ * Start server with proper error handling
+ */
+async function startServer() {
+  try {
+    const PORT = process.env.PORT || 3000;
+    const server = app.listen(PORT, () => {
+      console.log(`✓ Server running on port ${PORT}`);
+    });
+
+    // Handle server errors
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`✗ Port ${PORT} is already in use`);
+      } else {
+        console.error("✗ Server error:", err.message);
+      }
+      process.exit(1);
+    });
+  } catch (err) {
+    console.error("✗ Failed to start server:", err.message);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
+
 module.exports = app;

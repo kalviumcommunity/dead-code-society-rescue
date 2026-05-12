@@ -1,12 +1,12 @@
-var express = require('express');
-var router = express.Router();
-var os = require('os');
+const express = require('express');
+const router = express.Router();
+const os = require('os');
 
 /**
  * GET /status
  * Server status route for health checks
  */
-router.get('/status', function(req, res) {
+router.get('/status', (req, res) => {
     res.json({
         status: 'online',
         os: os.type(),
@@ -20,7 +20,7 @@ router.get('/status', function(req, res) {
  * GET /ping
  * Simple ping route
  */
-router.get('/ping', function(req, res) {
+router.get('/ping', (req, res) => {
     res.json({ pong: 'active' });
 });
 

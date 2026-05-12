@@ -1,7 +1,7 @@
-var express = require('express');
-var router = express.Router();
-var shipmentController = require('../controllers/shipmentController');
-var authMiddleware = require('../middlewares/authMiddleware');
+const express = require('express');
+const router = express.Router();
+const shipmentController = require('../controllers/shipmentController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 // All shipment routes require authentication
 router.use(authMiddleware.verifyToken);

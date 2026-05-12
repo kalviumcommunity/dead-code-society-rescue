@@ -1,8 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var authRoutes = require('./auth');
-var shipmentRoutes = require('./shipments');
-var healthRoutes = require('./health');
+const express = require('express');
+const router = express.Router();
+const authRoutes = require('./auth');
+const shipmentRoutes = require('./shipments');
+const healthRoutes = require('./health');
 
 // Route groups
 router.use('/auth', authRoutes);

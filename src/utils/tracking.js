@@ -1,4 +1,4 @@
-var crypto = require('crypto');
+const crypto = require('crypto');
 
 /**
  * Generate a unique tracking ID

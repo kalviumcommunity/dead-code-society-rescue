@@ -1,122 +1,95 @@
-var Shipment = require('../models/Shipment');
-var User = require('../models/User');
-var tracking = require('../utils/tracking');
+const Shipment = require('../models/Shipment');
+const User = require('../models/User');
+const tracking = require('../utils/tracking');
 
 /**
  * Create a new shipment
  * Only includes specified fields to prevent NoSQL injection
  */
-exports.createShipment = function(shipmentData, userId, callback) {
+exports.createShipment = async (shipmentData, userId) => {
     // Validate required fields
     if (!shipmentData.origin || !shipmentData.destination || !shipmentData.weight || !shipmentData.carrier) {
-        return callback(new Error('Origin, destination, weight, and carrier are required'));
+        throw new Error('Origin, destination, weight, and carrier are required');
     }
 
-    var trackingId = tracking.generateTrackingId();
+    const trackingId = tracking.generateTrackingId();
     
-    var newShipment = new Shipment({
-        trackingId: trackingId,
+    const newShipment = new Shipment({
+        trackingId,
         origin: shipmentData.origin,
         destination: shipmentData.destination,
         weight: shipmentData.weight,
         carrier: shipmentData.carrier,
-        userId: userId,
+        userId,
         status: 'pending'
     });
 
-    newShipment.save(function(err, saved) {
-        if (err) {
-            return callback(err);
-        }
-        callback(null, saved);
-    });
+    const saved = await newShipment.save();
+    return saved;
 };
 
 /**
  * Get all shipments for a user
  * Uses populate to avoid N+1 queries
  */
-exports.getUserShipments = function(userId, callback) {
-    Shipment.find({ userId: userId })
-        .populate('userId', 'name email')
-        .exec(function(err, shipments) {
-            if (err) {
-                return callback(err);
-            }
-            callback(null, shipments);
-        });
+exports.getUserShipments = async (userId) => {
+    const shipments = await Shipment.find({ userId }).populate('userId', 'name email');
+    return shipments;
 };
 
 /**
  * Get a single shipment by ID
  * Checks ownership
  */
-exports.getShipmentById = function(shipmentId, userId, userRole, callback) {
-    Shipment.findById(shipmentId, function(err, shipment) {
-        if (err) {
-            return callback(err);
-        }
+exports.getShipmentById = async (shipmentId, userId, userRole) => {
+    const shipment = await Shipment.findById(shipmentId);
 
-        if (!shipment) {
-            return callback(new Error('Shipment not found'));
-        }
+    if (!shipment) {
+        throw new Error('Shipment not found');
+    }
 
-        // Check permissions: owner or admin
-        if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-            return callback(new Error('No access to this shipment'));
-        }
+    // Check permissions: owner or admin
+    if (shipment.userId.toString() !== userId && userRole !== 'admin') {
+        throw new Error('No access to this shipment');
+    }
 
-        callback(null, shipment);
-    });
+    return shipment;
 };
 
 /**
  * Update shipment status
  * Only admins can update to 'delivered'
  */
-exports.updateShipmentStatus = function(shipmentId, newStatus, userId, userRole, callback) {
+exports.updateShipmentStatus = async (shipmentId, newStatus, userId, userRole) => {
     // Admin check for delivered status
     if (newStatus === 'delivered' && userRole !== 'admin') {
-        return callback(new Error('Admins only can mark as delivered'));
+        throw new Error('Admins only can mark as delivered');
     }
 
-    Shipment.findByIdAndUpdate(shipmentId, { status: newStatus }, { new: true }, function(err, doc) {
-        if (err) {
-            return callback(err);
-        }
+    const doc = await Shipment.findByIdAndUpdate(shipmentId, { status: newStatus }, { new: true });
 
-        if (!doc) {
-            return callback(new Error('Shipment not found'));
-        }
+    if (!doc) {
+        throw new Error('Shipment not found');
+    }
 
-        callback(null, doc);
-    });
+    return doc;
 };
 
 /**
  * Delete a shipment
  * Only owner or admin can delete
  */
-exports.deleteShipment = function(shipmentId, userId, userRole, callback) {
-    Shipment.findById(shipmentId, function(err, shipment) {
-        if (err) {
-            return callback(err);
-        }
+exports.deleteShipment = async (shipmentId, userId, userRole) => {
+    const shipment = await Shipment.findById(shipmentId);
 
-        if (!shipment) {
-            return callback(new Error('Shipment not found'));
-        }
+    if (!shipment) {
+        throw new Error('Shipment not found');
+    }
 
-        // Check permissions
-        if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-            return callback(new Error('No access to delete this shipment'));
-        }
+    // Check permissions
+    if (shipment.userId.toString() !== userId && userRole !== 'admin') {
+        throw new Error('No access to delete this shipment');
+    }
 
-        Shipment.findByIdAndDelete(shipmentId, function(err) {
-            if (err) {
-                return callback(err);
-            }
-            callback(null);
-        });
-    });
+    await Shipment.findByIdAndDelete(shipmentId);
 };

@@ -629,7 +629,5 @@ Potential enhancements for consideration:
 - [ ] Add search/filtering capabilities
 
 ---
-
 ## Questions?
-
 See README.md for API documentation or open an issue on GitHub.

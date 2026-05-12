@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
 const SALT_ROUNDS = 12;
 
@@ -9,7 +9,7 @@ const SALT_ROUNDS = 12;
  * @throws {Error} If bcrypt fails to hash the password.
  */
 async function hashPassword(password) {
-    return bcrypt.hash(password, SALT_ROUNDS);
+  return bcrypt.hash(password, SALT_ROUNDS);
 }
 
 /**
@@ -20,11 +20,11 @@ async function hashPassword(password) {
  * @throws {Error} If bcrypt fails to compare the password.
  */
 async function comparePassword(password, hash) {
-    return bcrypt.compare(password, hash);
+  return bcrypt.compare(password, hash);
 }
 
 module.exports = {
-    hashPassword,
-    comparePassword,
-    SALT_ROUNDS
+  hashPassword,
+  comparePassword,
+  SALT_ROUNDS,
 };

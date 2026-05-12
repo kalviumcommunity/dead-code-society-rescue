@@ -1,10 +1,10 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = '12h';
+const JWT_EXPIRES_IN = "12h";
 
 if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required');
+  throw new Error("JWT_SECRET environment variable is required");
 }
 
 /**
@@ -14,7 +14,7 @@ if (!JWT_SECRET) {
  * @throws {Error} If signing fails.
  */
 function signToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
@@ -24,12 +24,12 @@ function signToken(payload) {
  * @throws {Error} If the token is missing, invalid, or expired.
  */
 function verifyToken(token) {
-    return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, JWT_SECRET);
 }
 
 module.exports = {
-    signToken,
-    verifyToken,
-    JWT_SECRET,
-    JWT_EXPIRES_IN
+  signToken,
+  verifyToken,
+  JWT_SECRET,
+  JWT_EXPIRES_IN,
 };

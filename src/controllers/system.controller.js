@@ -6,12 +6,12 @@
  * @returns {void} Sends the status payload.
  */
 function status(req, res) {
-    res.json({
-        os: process.platform,
-        release: process.version,
-        uptime: process.uptime(),
-        memory: process.memoryUsage().rss
-    });
+  res.json({
+    os: process.platform,
+    release: process.version,
+    uptime: process.uptime(),
+    memory: process.memoryUsage().rss,
+  });
 }
 
 /**
@@ -22,10 +22,10 @@ function status(req, res) {
  * @returns {void} Sends the ping payload.
  */
 function ping(req, res) {
-    res.json({ pong: 'active' });
+  res.json({ pong: "active" });
 }
 
 module.exports = {
-    status,
-    ping
+  status,
+  ping,
 };

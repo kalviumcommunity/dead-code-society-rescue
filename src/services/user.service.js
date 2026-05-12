@@ -1,6 +1,6 @@
-const User = require('../models/User');
-const { NotFoundError } = require('../utils/errors.util');
-const { serializeUser } = require('../utils/response.util');
+const User = require("../models/User");
+const { NotFoundError } = require("../utils/errors.util");
+const { serializeUser } = require("../utils/response.util");
 
 /**
  * Fetches a user profile by id.
@@ -9,15 +9,15 @@ const { serializeUser } = require('../utils/response.util');
  * @throws {NotFoundError} If the user does not exist.
  */
 async function getUserProfile(userId) {
-    const user = await User.findById(userId);
+  const user = await User.findById(userId);
 
-    if (!user) {
-        throw new NotFoundError('User not found');
-    }
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
 
-    return serializeUser(user);
+  return serializeUser(user);
 }
 
 module.exports = {
-    getUserProfile
+  getUserProfile,
 };

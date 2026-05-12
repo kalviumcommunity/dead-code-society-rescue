@@ -1,5 +1,5 @@
-const { asyncHandler } = require('../utils/async.util');
-const shipmentService = require('../services/shipment.service');
+const { asyncHandler } = require("../utils/async.util");
+const shipmentService = require("../services/shipment.service");
 
 /**
  * Lists shipments for the authenticated user.
@@ -9,12 +9,12 @@ const shipmentService = require('../services/shipment.service');
  * @returns {Promise<void>} Sends the shipment list response.
  */
 const listShipments = asyncHandler(async function listShipments(req, res) {
-    const shipments = await shipmentService.listShipments(req.user);
-    res.json({
-        status: 'success',
-        results: shipments.length,
-        data: shipments
-    });
+  const shipments = await shipmentService.listShipments(req.user);
+  res.json({
+    status: "success",
+    results: shipments.length,
+    data: shipments,
+  });
 });
 
 /**
@@ -25,8 +25,11 @@ const listShipments = asyncHandler(async function listShipments(req, res) {
  * @returns {Promise<void>} Sends the shipment response.
  */
 const getShipment = asyncHandler(async function getShipment(req, res) {
-    const shipment = await shipmentService.getShipmentById(req.params.id, req.user);
-    res.json(shipment);
+  const shipment = await shipmentService.getShipmentById(
+    req.params.id,
+    req.user,
+  );
+  res.json(shipment);
 });
 
 /**
@@ -37,8 +40,8 @@ const getShipment = asyncHandler(async function getShipment(req, res) {
  * @returns {Promise<void>} Sends the created shipment response.
  */
 const createShipment = asyncHandler(async function createShipment(req, res) {
-    const shipment = await shipmentService.createShipment(req.user.id, req.body);
-    res.status(201).json(shipment);
+  const shipment = await shipmentService.createShipment(req.user.id, req.body);
+  res.status(201).json(shipment);
 });
 
 /**
@@ -48,10 +51,16 @@ const createShipment = asyncHandler(async function createShipment(req, res) {
  * @param {Function} next - Express next callback.
  * @returns {Promise<void>} Sends the updated shipment response.
  */
-const updateShipmentStatus = asyncHandler(async function updateShipmentStatus(req, res) {
-    const shipment = await shipmentService.updateShipmentStatus(req.params.id, req.user, req.body.status);
+const updateShipmentStatus = asyncHandler(
+  async function updateShipmentStatus(req, res) {
+    const shipment = await shipmentService.updateShipmentStatus(
+      req.params.id,
+      req.user,
+      req.body.status,
+    );
     res.json(shipment);
-});
+  },
+);
 
 /**
  * Deletes a shipment.
@@ -61,14 +70,14 @@ const updateShipmentStatus = asyncHandler(async function updateShipmentStatus(re
  * @returns {Promise<void>} Sends the deletion confirmation response.
  */
 const deleteShipment = asyncHandler(async function deleteShipment(req, res) {
-    const result = await shipmentService.deleteShipment(req.params.id, req.user);
-    res.json(result);
+  const result = await shipmentService.deleteShipment(req.params.id, req.user);
+  res.json(result);
 });
 
 module.exports = {
-    listShipments,
-    getShipment,
-    createShipment,
-    updateShipmentStatus,
-    deleteShipment
+  listShipments,
+  getShipment,
+  createShipment,
+  updateShipmentStatus,
+  deleteShipment,
 };

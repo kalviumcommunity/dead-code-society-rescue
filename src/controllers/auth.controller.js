@@ -1,5 +1,5 @@
-const { asyncHandler } = require('../utils/async.util');
-const authService = require('../services/auth.service');
+const { asyncHandler } = require("../utils/async.util");
+const authService = require("../services/auth.service");
 
 /**
  * Registers a new user.
@@ -9,12 +9,12 @@ const authService = require('../services/auth.service');
  * @returns {Promise<void>} Sends the created user response.
  */
 const register = asyncHandler(async function register(req, res) {
-    const result = await authService.registerUser(req.body);
-    res.status(201).json({
-        success: true,
-        message: 'Account created!',
-        user: result.user
-    });
+  const result = await authService.registerUser(req.body);
+  res.status(201).json({
+    success: true,
+    message: "Account created!",
+    user: result.user,
+  });
 });
 
 /**
@@ -25,15 +25,15 @@ const register = asyncHandler(async function register(req, res) {
  * @returns {Promise<void>} Sends the login response.
  */
 const login = asyncHandler(async function login(req, res) {
-    const result = await authService.loginUser(req.body.email, req.body.password);
-    res.json({
-        msg: 'Login OK',
-        token: result.token,
-        data: result.user
-    });
+  const result = await authService.loginUser(req.body.email, req.body.password);
+  res.json({
+    msg: "Login OK",
+    token: result.token,
+    data: result.user,
+  });
 });
 
 module.exports = {
-    register,
-    login
+  register,
+  login,
 };

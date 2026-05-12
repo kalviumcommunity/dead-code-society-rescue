@@ -1,12 +1,12 @@
-const Shipment = require('../models/Shipment');
-const { NotFoundError, UnauthorizedError } = require('../utils/errors.util');
+const Shipment = require("../models/Shipment");
+const { NotFoundError, UnauthorizedError } = require("../utils/errors.util");
 
 function createTrackingId() {
-    return `SHIP-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  return `SHIP-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
 function canAccessShipment(user, shipment) {
-    return user.role === 'admin' || shipment.userId.toString() === user.id;
+  return user.role === "admin" || shipment.userId.toString() === user.id;
 }
 
 /**
@@ -15,8 +15,8 @@ function canAccessShipment(user, shipment) {
  * @returns {Promise<Array<Object>>} Shipments with populated owner references.
  */
 async function listShipments(user) {
-    const query = user.role === 'admin' ? {} : { userId: user.id };
-    return Shipment.find(query).populate('userId', 'name email role');
+  const query = user.role === "admin" ? {} : { userId: user.id };
+  return Shipment.find(query).populate("userId", "name email role");
 }
 
 /**
@@ -28,17 +28,20 @@ async function listShipments(user) {
  * @throws {UnauthorizedError} If the user cannot access the shipment.
  */
 async function getShipmentById(shipmentId, user) {
-    const shipment = await Shipment.findById(shipmentId).populate('userId', 'name email role');
+  const shipment = await Shipment.findById(shipmentId).populate(
+    "userId",
+    "name email role",
+  );
 
-    if (!shipment) {
-        throw new NotFoundError('Shipment not found');
-    }
+  if (!shipment) {
+    throw new NotFoundError("Shipment not found");
+  }
 
-    if (!canAccessShipment(user, shipment)) {
-        throw new UnauthorizedError('No access to this shipment');
-    }
+  if (!canAccessShipment(user, shipment)) {
+    throw new UnauthorizedError("No access to this shipment");
+  }
 
-    return shipment;
+  return shipment;
 }
 
 /**
@@ -48,15 +51,15 @@ async function getShipmentById(shipmentId, user) {
  * @returns {Promise<Object>} Created shipment document.
  */
 async function createShipment(userId, input) {
-    return Shipment.create({
-        trackingId: createTrackingId(),
-        origin: input.origin,
-        destination: input.destination,
-        weight: input.weight,
-        carrier: input.carrier,
-        userId,
-        status: 'pending'
-    });
+  return Shipment.create({
+    trackingId: createTrackingId(),
+    origin: input.origin,
+    destination: input.destination,
+    weight: input.weight,
+    carrier: input.carrier,
+    userId,
+    status: "pending",
+  });
 }
 
 /**
@@ -69,23 +72,23 @@ async function createShipment(userId, input) {
  * @throws {UnauthorizedError} If the user cannot update the shipment.
  */
 async function updateShipmentStatus(shipmentId, user, status) {
-    const shipment = await Shipment.findById(shipmentId);
+  const shipment = await Shipment.findById(shipmentId);
 
-    if (!shipment) {
-        throw new NotFoundError('Shipment not found');
-    }
+  if (!shipment) {
+    throw new NotFoundError("Shipment not found");
+  }
 
-    if (!canAccessShipment(user, shipment)) {
-        throw new UnauthorizedError('No access to this shipment');
-    }
+  if (!canAccessShipment(user, shipment)) {
+    throw new UnauthorizedError("No access to this shipment");
+  }
 
-    if (status === 'delivered' && user.role !== 'admin') {
-        throw new UnauthorizedError('Admins only can deliver');
-    }
+  if (status === "delivered" && user.role !== "admin") {
+    throw new UnauthorizedError("Admins only can deliver");
+  }
 
-    shipment.status = status;
-    await shipment.save();
-    return shipment;
+  shipment.status = status;
+  await shipment.save();
+  return shipment;
 }
 
 /**
@@ -97,26 +100,26 @@ async function updateShipmentStatus(shipmentId, user, status) {
  * @throws {UnauthorizedError} If the user cannot delete the shipment.
  */
 async function deleteShipment(shipmentId, user) {
-    const shipment = await Shipment.findById(shipmentId);
+  const shipment = await Shipment.findById(shipmentId);
 
-    if (!shipment) {
-        throw new NotFoundError('Shipment not found');
-    }
+  if (!shipment) {
+    throw new NotFoundError("Shipment not found");
+  }
 
-    if (!canAccessShipment(user, shipment)) {
-        throw new UnauthorizedError('No access to this shipment');
-    }
+  if (!canAccessShipment(user, shipment)) {
+    throw new UnauthorizedError("No access to this shipment");
+  }
 
-    await Shipment.findByIdAndDelete(shipmentId);
-    return {
-        message: `Deleted ${shipmentId}`
-    };
+  await Shipment.findByIdAndDelete(shipmentId);
+  return {
+    message: `Deleted ${shipmentId}`,
+  };
 }
 
 module.exports = {
-    listShipments,
-    getShipmentById,
-    createShipment,
-    updateShipmentStatus,
-    deleteShipment
+  listShipments,
+  getShipmentById,
+  createShipment,
+  updateShipmentStatus,
+  deleteShipment,
 };

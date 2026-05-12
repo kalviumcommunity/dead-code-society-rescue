@@ -1,8 +1,8 @@
-const User = require('../models/User');
-const { ConflictError, UnauthorizedError } = require('../utils/errors.util');
-const { comparePassword, hashPassword } = require('../utils/hash.util');
-const { signToken } = require('../utils/jwt.util');
-const { serializeUser } = require('../utils/response.util');
+const User = require("../models/User");
+const { ConflictError, UnauthorizedError } = require("../utils/errors.util");
+const { comparePassword, hashPassword } = require("../utils/hash.util");
+const { signToken } = require("../utils/jwt.util");
+const { serializeUser } = require("../utils/response.util");
 
 /**
  * Registers a new user and returns the public user payload.
@@ -11,22 +11,22 @@ const { serializeUser } = require('../utils/response.util');
  * @throws {ConflictError} If the email already exists.
  */
 async function registerUser(input) {
-    const existingUser = await User.findOne({ email: input.email });
+  const existingUser = await User.findOne({ email: input.email });
 
-    if (existingUser) {
-        throw new ConflictError('Email already registered');
-    }
+  if (existingUser) {
+    throw new ConflictError("Email already registered");
+  }
 
-    const password = await hashPassword(input.password);
-    const user = await User.create({
-        name: input.name,
-        email: input.email,
-        password
-    });
+  const password = await hashPassword(input.password);
+  const user = await User.create({
+    name: input.name,
+    email: input.email,
+    password,
+  });
 
-    return {
-        user: serializeUser(user)
-    };
+  return {
+    user: serializeUser(user),
+  };
 }
 
 /**
@@ -37,25 +37,25 @@ async function registerUser(input) {
  * @throws {UnauthorizedError} If the email is unknown or the password is invalid.
  */
 async function loginUser(email, password) {
-    const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select("+password");
 
-    if (!user) {
-        throw new UnauthorizedError('Invalid credentials');
-    }
+  if (!user) {
+    throw new UnauthorizedError("Invalid credentials");
+  }
 
-    const isValid = await comparePassword(password, user.password);
+  const isValid = await comparePassword(password, user.password);
 
-    if (!isValid) {
-        throw new UnauthorizedError('Invalid credentials');
-    }
+  if (!isValid) {
+    throw new UnauthorizedError("Invalid credentials");
+  }
 
-    return {
-        user: serializeUser(user),
-        token: signToken({ id: user._id.toString(), role: user.role })
-    };
+  return {
+    user: serializeUser(user),
+    token: signToken({ id: user._id.toString(), role: user.role }),
+  };
 }
 
 module.exports = {
-    registerUser,
-    loginUser
+  registerUser,
+  loginUser,
 };

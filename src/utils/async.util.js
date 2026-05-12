@@ -5,15 +5,15 @@
  * @throws {TypeError} If handler is not a function.
  */
 function asyncHandler(handler) {
-    if (typeof handler !== 'function') {
-        throw new TypeError('handler must be a function');
-    }
+  if (typeof handler !== "function") {
+    throw new TypeError("handler must be a function");
+  }
 
-    return function wrappedAsyncHandler(req, res, next) {
-        return Promise.resolve(handler(req, res, next)).catch(next);
-    };
+  return function wrappedAsyncHandler(req, res, next) {
+    return Promise.resolve(handler(req, res, next)).catch(next);
+  };
 }
 
 module.exports = {
-    asyncHandler
+  asyncHandler,
 };

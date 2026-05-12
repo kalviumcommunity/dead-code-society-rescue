@@ -1,5 +1,5 @@
-const { asyncHandler } = require('../utils/async.util');
-const userService = require('../services/user.service');
+const { asyncHandler } = require("../utils/async.util");
+const userService = require("../services/user.service");
 
 /**
  * Returns the authenticated user's profile.
@@ -9,10 +9,10 @@ const userService = require('../services/user.service');
  * @returns {Promise<void>} Sends the profile response.
  */
 const profile = asyncHandler(async function profile(req, res) {
-    const user = await userService.getUserProfile(req.user.id);
-    res.json(user);
+  const user = await userService.getUserProfile(req.user.id);
+  res.json(user);
 });
 
 module.exports = {
-    profile
+  profile,
 };

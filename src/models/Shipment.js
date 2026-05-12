@@ -1,11 +1,6 @@
-/**
- * DEPRECATED: Model moved to src/models/Shipment.js
- * This file is kept for reference only. Import from the new location.
- */
+const mongoose = require('mongoose');
 
-var mongoose = require('mongoose');
-
-var shipmentSchema = new mongoose.Schema({
+const shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,
         required: true,

@@ -1,56 +1,57 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+// Routes
+const apiRoutes = require('./routes');
 
-// routes
-var routes = require('./routes');
+// Middlewares
+const errorHandler = require('./middlewares/errorHandler');
 
-var app = express();
+const app = express();
 
-// middleware setup
+// Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
-});
+// Database connection
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+(async () => {
+    try {
+        await mongoose.connect(mongoUrl, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+        console.log('--- DATABASE CONNECTED ---');
+    } catch (err) {
+        console.log('DATABASE CONNECTION ERROR:');
+        console.log(err);
+    }
+})();
 
-// register routes
-app.use('/api', routes); // all routes under /api
-
-// welcome route
-app.get('/', function(req, res) {
+// Welcome route
+app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-// no 404 handler here, let express handle it for now
+// Register API routes
+app.use('/api', apiRoutes);
 
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
+// 404 handler (before error handler)
+app.use(errorHandler.notFound);
+
+// Global error handler (MUST BE LAST)
+app.use(errorHandler.errorHandler);
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');
 });
 
-// exporting for testing later
+// Exporting for testing
 module.exports = app;

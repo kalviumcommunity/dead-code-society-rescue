@@ -1,11 +1,12 @@
 require('dotenv').config();
+// SMELL: [HIGH] Using var instead of const/let. Should use const for all imports.
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var cors = require('cors');
 var path = require('path');
 
-// models are here
+// SMELL: [MEDIUM] Models imported but not used in this file. Only used in routes.
 var User = require('../models/User'); // manually load models
 var Shipment = require('../models/Shipment');
 
@@ -19,6 +20,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// SMELL: [HIGH] Promise chain using .then/.catch instead of async/await. Also no proper error logging.
 // database connection
 var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
 mongoose.connect(mongoUrl, {
@@ -44,7 +46,7 @@ app.get('/', function(req, res) {
 });
 
 // no 404 handler here, let express handle it for now
-
+SMELL: [MEDIUM] No error handling for server startup. Process silently fails if port is in use.
 // start server
 var PORT = process.env.PORT || 3000;
 app.listen(PORT, function() {

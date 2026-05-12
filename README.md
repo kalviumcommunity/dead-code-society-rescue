@@ -95,7 +95,6 @@ This API manages user accounts and shipment tracking with the following features
 ## API Reference
 
 ### Authentication
-
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|---------------|-------------|
 | `POST` | `/api/auth/register` | No | Create new user account |
@@ -103,7 +102,6 @@ This API manages user accounts and shipment tracking with the following features
 | `GET` | `/api/auth/profile` | Yes | Get current authenticated user's profile |
 
 ### Shipments
-
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|---------------|-------------|
 | `POST` | `/api/shipments` | Yes | Create new shipment |
@@ -113,7 +111,6 @@ This API manages user accounts and shipment tracking with the following features
 | `DELETE` | `/api/shipments/:id` | Yes | Delete a shipment |
 
 ### Request Examples
-
 **Register a new user:**
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
@@ -124,7 +121,6 @@ curl -X POST http://localhost:3000/api/auth/register \
     "password": "securePassword123"
   }'
 ```
-
 **Login:**
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
@@ -134,7 +130,6 @@ curl -X POST http://localhost:3000/api/auth/login \
     "password": "securePassword123"
   }'
 ```
-
 **Create a shipment:**
 ```bash
 curl -X POST http://localhost:3000/api/shipments \
@@ -147,13 +142,11 @@ curl -X POST http://localhost:3000/api/shipments \
     "carrier": "FedEx"
   }'
 ```
-
 **Get all shipments:**
 ```bash
 curl -X GET http://localhost:3000/api/shipments \
   -H "Authorization: eyJhbGciOiJIUzI1NiIs..."
 ```
-
 **Update shipment status:**
 ```bash
 curl -X PATCH http://localhost:3000/api/shipments/60d5ec49c1234567890abcd/status \
@@ -165,7 +158,6 @@ curl -X PATCH http://localhost:3000/api/shipments/60d5ec49c1234567890abcd/status
 ## Architecture
 
 ### 6-Layer Architecture
-
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    ROUTES LAYER                         │
@@ -212,7 +204,6 @@ UTILITIES (Cross-cutting concerns):
 ```
 
 ### Data Flow
-
 ```
 HTTP Request
     │
@@ -273,7 +264,6 @@ HTTP Request
 - **Constants Management**: Centralized enum definitions
 
 ## Project Structure
-
 ```
 dead-code-society-rescue/
 ├── src/
@@ -323,9 +313,7 @@ dead-code-society-rescue/
 ```
 
 ## Error Handling
-
 The API uses HTTP status codes to indicate errors:
-
 | Status | Error | Description |
 |--------|-------|-------------|
 | `400` | ValidationError | Request data fails validation |
@@ -358,12 +346,10 @@ The API uses HTTP status codes to indicate errors:
 ```javascript
 const queryTest = require('./src/utils/queryTest');
 const shipmentService = require('./src/services/shipmentService');
-
 // Test with query logging
 await queryTest.testWithQueryLogging('Fetch 10 shipments', async () => {
     await shipmentService.getUserShipments(userId);
 });
-
 // Compare before/after optimization
 await queryTest.compareQueryCounts(
     'Shipment fetch optimization',
@@ -390,13 +376,10 @@ npm run dev
 ```
 
 ## License
-
 MIT
 
 ## Contributing
-
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Support
-
 For issues and questions, please open a GitHub issue or contact the maintainers.

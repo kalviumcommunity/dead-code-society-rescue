@@ -1,19 +1,23 @@
 const jwt = require('jsonwebtoken');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
 
 // Get JWT secret from env, with fallback (should require .env in production)
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 /**
- * Hash a password using MD5
- * WARNING: MD5 is not secure for password hashing. Use bcrypt in production.
+ * Hash a password using bcrypt with 12 rounds
+ * Secure password hashing algorithm
  */
-exports.hashPassword = (password) => md5(password);
+exports.hashPassword = async (password) => {
+    return await bcrypt.hash(password, 12);
+};
 
 /**
- * Verify password against hash
+ * Verify password against bcrypt hash
  */
-exports.verifyPassword = (password, hash) => md5(password) === hash;
+exports.verifyPassword = async (password, hash) => {
+    return await bcrypt.compare(password, hash);
+};
 
 /**
  * Generate JWT token

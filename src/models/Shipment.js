@@ -1,8 +1,3 @@
-/**
- * DEPRECATED: Model moved to src/models/Shipment.js
- * This file is kept for reference only. Import from the new location.
- */
-
 var mongoose = require('mongoose');
 
 var shipmentSchema = new mongoose.Schema({

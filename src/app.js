@@ -3,30 +3,25 @@ var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var cors = require('cors');
-var path = require('path');
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+// Routes
+var apiRoutes = require('./routes');
 
-// routes
-var routes = require('./routes');
+// Middlewares
+var errorHandler = require('./middlewares/errorHandler');
 
 var app = express();
 
-// middleware setup
+// Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// database connection
+// Database connection
 var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-// SMELL: [MEDIUM] Deprecated Mongoose options (useCreateIndex, useFindAndModify) are ignored in current versions and will cause warnings in future Mongoose releases.
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
+    useUnifiedTopology: true
 })
 .then(function() {
     console.log('--- DATABASE CONNECTED ---');
@@ -36,23 +31,26 @@ mongoose.connect(mongoUrl, {
     console.log(err);
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
-
-// welcome route
+// Welcome route
 app.get('/', function(req, res) {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-// SMELL: [MEDIUM] Missing error handling middleware allows unhandled errors to crash the server and 404s to return generic Express HTML instead of JSON.
-// no 404 handler here, let express handle it for now
+// Register API routes
+app.use('/api', apiRoutes);
 
-// start server
+// 404 handler
+app.use(errorHandler.notFound);
+
+// Global error handler
+app.use(errorHandler.errorHandler);
+
+// Start server
 var PORT = process.env.PORT || 3000;
 app.listen(PORT, function() {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');
 });
 
-// exporting for testing later
+// Exporting for testing
 module.exports = app;

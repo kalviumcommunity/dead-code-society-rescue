@@ -1,8 +1,3 @@
-/**
- * DEPRECATED: Model moved to src/models/User.js
- * This file is kept for reference only. Import from the new location.
- */
-
 var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
@@ -18,7 +13,7 @@ var userSchema = new Schema({
         unique: true
     },
     password: {
-        type: String, // using md5 for now, easy to test
+        type: String,
         required: true
     },
     role: {

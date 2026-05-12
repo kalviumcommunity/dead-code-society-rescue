@@ -1,3 +1,17 @@
+/**
+ * DEPRECATED: This file has been refactored into a layered architecture.
+ * See the new structure:
+ * 
+ * - src/routes/ - URL routing (now split into auth.js, shipments.js, health.js)
+ * - src/controllers/ - Request handlers (userController.js, shipmentController.js)
+ * - src/services/ - Business logic (userService.js, shipmentService.js)
+ * - src/models/ - Mongoose schemas (User.js, Shipment.js)
+ * - src/middlewares/ - Auth & error handling (authMiddleware.js, errorHandler.js)
+ * - src/utils/ - Shared utilities (auth.js, constants.js, response.js, tracking.js)
+ * 
+ * This file is kept for reference only. Use src/app.js and the new structure above.
+ */
+
 var express = require('express');
 var router = express.Router();
 var User = require('../models/User'); // user model

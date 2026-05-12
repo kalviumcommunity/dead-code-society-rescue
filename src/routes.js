@@ -5,12 +5,14 @@ var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [MEDIUM] Unused imports clutter the namespace and suggest dead code.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [CRITICAL] Hardcoded default JWT secret is publicly visible and easily guessable, compromising all authentication.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -19,10 +21,12 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
+    // SMELL: [CRITICAL] Spread operator directly copies untrusted user input into database object, enabling NoSQL injection and schema pollution.
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
     var userData = { ...req.body };
     
+    // SMELL: [CRITICAL] MD5 is not a password hashing algorithm; it is cryptographically broken and Rainbow tables crack it in under a second.
     // md5 is fine for hobby projects, its very fast
     userData.password = md5(userData.password);
 
@@ -99,6 +103,7 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
+                // SMELL: [HIGH] N+1 query problem: making a separate database call for each shipment results in quadratic database load and severe performance degradation.
                 // N+1 problem: fetching user details for each shipment in a loop
                 var finalData = [];
                 var itemsProcessed = 0;
@@ -124,7 +129,9 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
-                            }); // silent failure if this fails
+                            }); 
+                            // SMELL: [HIGH] Missing catch block on nested promise silently swallows errors and leaves response hanging indefinitely.
+                            // silent failure if this fails
                     })(i);
                 }
             })
@@ -178,9 +185,11 @@ router.post('/shipments', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [HIGH] Weak tracking ID generation using Date.now() and Math.random() is predictable and not cryptographically secure for unique identifiers.
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
+        // SMELL: [CRITICAL] Spread operator copies untrusted user input directly into shipment data, enabling NoSQL injection and unauthorized field manipulation.
         // Use spread to save time, mongoose will handle validation... maybe
         var newShipment = new Shipment({
             ...req.body,
@@ -213,6 +222,7 @@ router.patch('/shipments/:id/status', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // logic: only admins can mark as delivered
+        // SMELL: [MEDIUM] Magic string literals like 'delivered' and 'pending' scattered throughout code make refactoring error-prone and reduce maintainability.
         if (req.body.status === 'delivered') { // magic string comparison
             if (req.userRole !== 'admin') {
                 return res.json({ error: 'Admins only can deliver' });
@@ -241,6 +251,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [CRITICAL] Missing authorization check allows any authenticated user to delete any shipment, enabling unauthorized data destruction and privilege escalation.
         // No permission check! Anyone can delete any shipment if they have a token.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
@@ -271,7 +282,9 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            })
+            // SMELL: [HIGH] Missing catch handler causes unhandled promise rejections, leaving client hanging and hiding database errors from logging.
+            ; // missing catch
     });
 });
 

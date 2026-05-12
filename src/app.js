@@ -21,6 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
 var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+// SMELL: [MEDIUM] Deprecated Mongoose options (useCreateIndex, useFindAndModify) are ignored in current versions and will cause warnings in future Mongoose releases.
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -43,6 +44,7 @@ app.get('/', function(req, res) {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
+// SMELL: [MEDIUM] Missing error handling middleware allows unhandled errors to crash the server and 404s to return generic Express HTML instead of JSON.
 // no 404 handler here, let express handle it for now
 
 // start server

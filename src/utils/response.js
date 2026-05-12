@@ -10,12 +10,25 @@ exports.success = (res, data, statusCode = 200) => {
 
 /**
  * Send error response
+ * Accepts either a string message or an object with message and errors array
  */
 exports.error = (res, message, statusCode = 400) => {
-    res.status(statusCode).json({
-        success: false,
-        error: message
-    });
+    const errorBody = {
+        success: false
+    };
+
+    // Handle object with message and errors array (from validation)
+    if (typeof message === 'object' && message.message) {
+        errorBody.message = message.message;
+        if (message.errors) {
+            errorBody.errors = message.errors;
+        }
+    } else {
+        // Simple string error message
+        errorBody.error = message;
+    }
+
+    res.status(statusCode).json(errorBody);
 };
 
 /**

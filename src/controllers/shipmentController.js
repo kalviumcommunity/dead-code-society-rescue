@@ -5,13 +5,12 @@ const response = require('../utils/response');
  * POST /shipments
  * Create a new shipment
  */
-exports.createShipment = async (req, res) => {
+exports.createShipment = async (req, res, next) => {
     try {
         const shipment = await shipmentService.createShipment(req.body, req.userId);
         response.success(res, shipment, 201);
     } catch (err) {
-        console.log('Error creating shipment: ' + err);
-        response.error(res, err.message || 'Cannot create shipment');
+        next(err);
     }
 };
 
@@ -19,7 +18,7 @@ exports.createShipment = async (req, res) => {
  * GET /shipments
  * Get all shipments for the authenticated user
  */
-exports.getShipments = async (req, res) => {
+exports.getShipments = async (req, res, next) => {
     try {
         const shipments = await shipmentService.getUserShipments(req.userId);
         response.success(res, {
@@ -27,8 +26,7 @@ exports.getShipments = async (req, res) => {
             shipments
         });
     } catch (err) {
-        console.log('Error fetching shipments: ' + err);
-        response.error(res, 'Cannot fetch shipments');
+        next(err);
     }
 };
 
@@ -36,13 +34,12 @@ exports.getShipments = async (req, res) => {
  * GET /shipments/:id
  * Get a specific shipment by ID
  */
-exports.getShipmentById = async (req, res) => {
+exports.getShipmentById = async (req, res, next) => {
     try {
         const shipment = await shipmentService.getShipmentById(req.params.id, req.userId, req.userRole);
         response.success(res, shipment);
     } catch (err) {
-        console.log('Error fetching shipment: ' + err);
-        response.error(res, err.message);
+        next(err);
     }
 };
 
@@ -50,7 +47,7 @@ exports.getShipmentById = async (req, res) => {
  * PATCH /shipments/:id/status
  * Update shipment status
  */
-exports.updateStatus = async (req, res) => {
+exports.updateStatus = async (req, res, next) => {
     try {
         if (!req.body.status) {
             return response.error(res, 'Status is required');
@@ -59,8 +56,7 @@ exports.updateStatus = async (req, res) => {
         const shipment = await shipmentService.updateShipmentStatus(req.params.id, req.body.status, req.userId, req.userRole);
         response.success(res, shipment);
     } catch (err) {
-        console.log('Error updating shipment: ' + err);
-        response.error(res, err.message);
+        next(err);
     }
 };
 
@@ -68,12 +64,11 @@ exports.updateStatus = async (req, res) => {
  * DELETE /shipments/:id
  * Delete a shipment
  */
-exports.deleteShipment = async (req, res) => {
+exports.deleteShipment = async (req, res, next) => {
     try {
         await shipmentService.deleteShipment(req.params.id, req.userId, req.userRole);
         response.success(res, { message: 'Shipment deleted successfully' });
     } catch (err) {
-        console.log('Error deleting shipment: ' + err);
-        response.error(res, err.message);
+        next(err);
     }
 };

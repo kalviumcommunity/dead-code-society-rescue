@@ -33,17 +33,17 @@ const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrac
 })();
 
 // Welcome route
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
 // Register API routes
 app.use('/api', apiRoutes);
 
-// 404 handler
+// 404 handler (before error handler)
 app.use(errorHandler.notFound);
 
-// Global error handler
+// Global error handler (MUST BE LAST)
 app.use(errorHandler.errorHandler);
 
 // Start server

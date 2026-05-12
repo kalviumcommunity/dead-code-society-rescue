@@ -6,7 +6,7 @@ const response = require('../utils/response');
  * POST /register
  * Create a new user account
  */
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
     try {
         const user = await userService.registerUser(req.body);
         response.success(res, {
@@ -14,8 +14,7 @@ exports.register = async (req, res) => {
             user
         }, 201);
     } catch (err) {
-        console.log('Error in register: ' + err);
-        response.error(res, 'Cannot register');
+        next(err);
     }
 };
 
@@ -23,7 +22,7 @@ exports.register = async (req, res) => {
  * POST /login
  * Authenticate user and return JWT token
  */
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
     try {
         const user = await userService.loginUser(req.body.email, req.body.password);
         const token = auth.generateToken(user._id, user.role);
@@ -39,8 +38,7 @@ exports.login = async (req, res) => {
             }
         });
     } catch (err) {
-        console.log('Login error: ' + err);
-        response.error(res, err.message);
+        next(err);
     }
 };
 
@@ -48,12 +46,11 @@ exports.login = async (req, res) => {
  * GET /profile
  * Get current user's profile
  */
-exports.getProfile = async (req, res) => {
+exports.getProfile = async (req, res, next) => {
     try {
         const user = await userService.getUserProfile(req.userId);
         response.success(res, user);
     } catch (err) {
-        console.log('Error fetching profile: ' + err);
-        response.error(res, 'Cannot fetch profile');
+        next(err);
     }
 };

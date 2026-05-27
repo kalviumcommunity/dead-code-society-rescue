@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwt.util');
 
 /**
@@ -8,7 +8,7 @@ const { generateToken } = require('../utils/jwt.util');
  * @returns {Promise<Object>} The created user object
  */
 const registerUser = async (userData) => {
-    const hashedPassword = md5(userData.password);
+    const hashedPassword = await bcrypt.hash(userData.password, 12);
     const newUser = new User({
         ...userData,
         password: hashedPassword
@@ -30,8 +30,8 @@ const loginUser = async (email, password) => {
         throw new Error('No user found with that email');
     }
     
-    const hashedPassword = md5(password);
-    if (user.password !== hashedPassword) {
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
         throw new Error('Password does not match');
     }
     

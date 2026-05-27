@@ -3,9 +3,12 @@ const { NotFoundError, ForbiddenError } = require('../utils/errors.util');
 
 /**
  * Get all shipments for the current user
- * @param {Object} req - Express request object
+ * @param {Object} req - Express request object with authenticated user ID
+ * @param {string} req.userId - MongoDB ObjectId of authenticated user
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @returns {void} Sends array of shipments with user details populated
+ * @throws {Error} Passes errors to error handling middleware
  */
 const getAllShipments = async (req, res, next) => {
     try {
@@ -22,9 +25,16 @@ const getAllShipments = async (req, res, next) => {
 
 /**
  * Get a single shipment by ID
- * @param {Object} req - Express request object
+ * @param {Object} req - Express request object with shipment ID and user info
+ * @param {string} req.params.id - MongoDB ObjectId of shipment to retrieve
+ * @param {string} req.userId - MongoDB ObjectId of authenticated user
+ * @param {string} req.userRole - Role of authenticated user ('user' or 'admin')
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @returns {void} Sends shipment data on success
+ * @throws {NotFoundError} If shipment not found
+ * @throws {ForbiddenError} If user doesn't have access to the shipment
+ * @throws {Error} Passes other errors to error handling middleware
  */
 const getShipment = async (req, res, next) => {
     try {
@@ -47,9 +57,17 @@ const getShipment = async (req, res, next) => {
 
 /**
  * Create a new shipment
- * @param {Object} req - Express request object
+ * @param {Object} req - Express request object with shipment data and user ID
+ * @param {Object} req.body - Request body containing shipment data
+ * @param {string} req.body.origin - Origin location
+ * @param {string} req.body.destination - Destination location
+ * @param {number} req.body.weight - Weight of shipment
+ * @param {string} req.body.carrier - Carrier name
+ * @param {string} req.userId - MongoDB ObjectId of authenticated user
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @returns {void} Sends 201 status with created shipment data
+ * @throws {Error} Passes errors to error handling middleware
  */
 const create = async (req, res, next) => {
     try {
@@ -62,9 +80,16 @@ const create = async (req, res, next) => {
 
 /**
  * Update shipment status
- * @param {Object} req - Express request object
+ * @param {Object} req - Express request object with shipment ID, status, and user role
+ * @param {string} req.params.id - MongoDB ObjectId of shipment to update
+ * @param {Object} req.body - Request body containing new status
+ * @param {string} req.body.status - New status value
+ * @param {string} req.userRole - Role of authenticated user ('user' or 'admin')
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @returns {void} Sends updated shipment data on success
+ * @throws {ForbiddenError} If non-admin tries to mark as delivered
+ * @throws {Error} Passes other errors to error handling middleware
  */
 const updateStatus = async (req, res, next) => {
     try {
@@ -84,9 +109,12 @@ const updateStatus = async (req, res, next) => {
 
 /**
  * Delete a shipment
- * @param {Object} req - Express request object
+ * @param {Object} req - Express request object with shipment ID
+ * @param {string} req.params.id - MongoDB ObjectId of shipment to delete
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @returns {void} Sends deletion confirmation on success
+ * @throws {Error} Passes errors to error handling middleware
  */
 const remove = async (req, res, next) => {
     try {

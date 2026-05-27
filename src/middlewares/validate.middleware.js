@@ -4,6 +4,7 @@ const Joi = require('joi');
  * Validation middleware factory
  * @param {Object} schema - Joi validation schema
  * @returns {Function} Express middleware function
+ * @throws {Error} If validation fails, sends 422 status with error messages
  */
 const validate = (schema) => {
     return (req, res, next) => {

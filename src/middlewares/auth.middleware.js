@@ -5,6 +5,7 @@ const { verifyToken } = require('../utils/jwt.util');
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @throws {Error} If token is missing or invalid
  */
 const authMiddleware = (req, res, next) => {
     const token = req.headers['authorization'];

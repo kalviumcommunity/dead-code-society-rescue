@@ -4,6 +4,7 @@
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
+ * @returns {void} Sends error response with appropriate status code
  */
 const errorHandler = (err, req, res, next) => {
     console.error('Error:', err);

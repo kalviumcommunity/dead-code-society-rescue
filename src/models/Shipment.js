@@ -1,7 +1,6 @@
-// SMELL: [MEDIUM] Using var instead of const/let throughout the file
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var shipmentSchema = new mongoose.Schema({
+const shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,
         required: true,
@@ -15,10 +14,9 @@ var shipmentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // SMELL: [MEDIUM] Magic string 'pending' should be an enum constant
     status: {
         type: String,
-        default: 'pending' // pending, in-progress, delivered, cancelled
+        default: 'pending'
     },
     weight: {
         type: Number,
@@ -44,7 +42,6 @@ var shipmentSchema = new mongoose.Schema({
     }
 });
 
-// SMELL: [LOW] No validation on status field to ensure only valid values
 // hook for pre-save on model
 shipmentSchema.pre('save', function(next) {
     this.updatedAt = Date.now();

@@ -1,8 +1,8 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-var userSchema = new Schema({
+const userSchema = new Schema({
     name: {
         type: String,
         required: true
@@ -12,17 +12,14 @@ var userSchema = new Schema({
         required: true,
         unique: true
     },
-    // SMELL: [CRITICAL] Comment indicates MD5 is used for passwords - insecure
     password: {
-        type: String, // using md5 for now, easy to test
+        type: String,
         required: true
     },
-    // SMELL: [MEDIUM] Magic string 'user' should be an enum constant
     role: {
         type: String,
-        default: 'user' // either 'user' or 'admin'
+        default: 'user'
     },
-    // SMELL: [LOW] No password validation or strength requirements
     createdAt: {
         type: Date,
         default: Date.now

@@ -15,14 +15,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // database connection
 const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl)
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
-});
+(async function connectDB() {
+    try {
+        await mongoose.connect(mongoUrl);
+        console.log('--- DATABASE CONNECTED ---');
+    } catch (err) {
+        console.log('DATABASE CONNECTION ERROR:');
+        console.log(err);
+    }
+})();
 
 // register routes
 app.use('/api', routes); // all routes under /api

@@ -38,6 +38,10 @@ app.use(function(req, res) {
     res.status(404).json({ error: 'Route not found' });
 });
 
+// global error handler
+const errorHandler = require('./middlewares/error.middleware');
+app.use(errorHandler);
+
 // start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, function() {

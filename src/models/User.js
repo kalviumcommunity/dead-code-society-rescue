@@ -1,4 +1,3 @@
-// SMELL: [MEDIUM] Using var instead of const/let throughout the file
 var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;

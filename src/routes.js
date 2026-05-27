@@ -1,16 +1,21 @@
+// SMELL: [MEDIUM] Using var instead of const/let throughout the file
 var express = require('express');
 var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
+// SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds.
+// A rainbow table can crack this in under a second.
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [LOW] Unused imports that should be removed: path, fs, http, os
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [HIGH] Weak default JWT secret value should not have a fallback
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -20,9 +25,10 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 // POST /register - make a new account
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] Spread operator enables NoSQL injection since we take anything!
     var userData = { ...req.body };
     
+    // SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds.
     // md5 is fine for hobby projects, its very fast
     userData.password = md5(userData.password);
 
@@ -31,6 +37,7 @@ router.post('/register', function(req, res) {
     newUser.save()
         .then(function(user) {
             console.log('Registered user: ' + user.email);
+            // SMELL: [MEDIUM] Using 200 status for everything instead of proper 201 for creation
             // using 200 for everything, its simpler for my frontend dev
             res.json({
                 success: true,
@@ -38,6 +45,7 @@ router.post('/register', function(req, res) {
                 user: user
             });
         })
+        // SMELL: [HIGH] Generic error handling without proper status codes or error details
         .catch(function(err) {
             console.log('Error in register: ' + err);
             res.json({ success: false, error: 'Cannot register' });
@@ -46,6 +54,7 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
+    // SMELL: [CRITICAL] No input validation on req.body.email
     // find user by email - direct spread again for injection
     User.findOne({ email: req.body.email })
         .then(function(user) {
@@ -53,6 +62,7 @@ router.post('/login', function(req, res) {
                 return res.json({ error: 'No user found with that email' });
             }
 
+            // SMELL: [CRITICAL] MD5 password comparison is insecure. Use bcrypt.compare().
             // check md5 password
             if (user.password === md5(req.body.password)) {
                 // sign jwt
@@ -75,6 +85,7 @@ router.post('/login', function(req, res) {
                 res.json({ error: 'Password does not match' });
             }
         })
+        // SMELL: [HIGH] Generic error handling without proper status codes
         .catch(function(err) {
             console.log('Login crash: ' + err);
             res.json({ error: 'Server error' });
@@ -99,7 +110,8 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
+                // SMELL: [HIGH] N+1 problem: fetching user details for each shipment in a loop
+                // Should use .populate() instead
                 var finalData = [];
                 var itemsProcessed = 0;
 
@@ -110,6 +122,7 @@ router.get('/shipments', function(req, res) {
                 for (var i = 0; i < shipments.length; i++) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
+                        // SMELL: [HIGH] Calling DB inside a loop causes N+1 query problem
                         // Calling DB inside a loop is standard right?
                         User.findById(ship.userId)
                             .then(function(u) {
@@ -124,10 +137,12 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
+                            // SMELL: [HIGH] Silent failure if this fails - no error handling
                             }); // silent failure if this fails
                     })(i);
                 }
             })
+            // SMELL: [HIGH] Generic error handling without proper status codes
             .catch(function(err) {
                 console.log(err);
                 res.json({ error: 'Fetch failed' });
@@ -160,6 +175,7 @@ router.get('/shipments/:id', function(req, res) {
 
                 res.json(shipment);
             })
+            // SMELL: [HIGH] Generic error handling without proper status codes
             .catch(function(err) {
                 res.json({ error: 'Error on findById' });
             });
@@ -181,11 +197,13 @@ router.post('/shipments', function(req, res) {
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
+        // SMELL: [CRITICAL] Spread operator enables NoSQL injection
         // Use spread to save time, mongoose will handle validation... maybe
         var newShipment = new Shipment({
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
+            // SMELL: [MEDIUM] Magic string 'pending' should be an enum constant
             status: 'pending' // magic string
         });
 
@@ -193,6 +211,7 @@ router.post('/shipments', function(req, res) {
             .then(function(saved) {
                 res.json(saved);
             })
+            // SMELL: [HIGH] Generic error handling without proper status codes
             .catch(function(err) {
                 console.log('Error saving shipment');
                 res.json({ error: err });
@@ -212,6 +231,7 @@ router.patch('/shipments/:id/status', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [MEDIUM] Magic string comparison should use enum constant
         // logic: only admins can mark as delivered
         if (req.body.status === 'delivered') { // magic string comparison
             if (req.userRole !== 'admin') {
@@ -219,10 +239,12 @@ router.patch('/shipments/:id/status', function(req, res) {
             }
         }
 
+        // SMELL: [HIGH] No validation of req.body.status value
         Shipment.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true })
             .then(function(doc) {
                 res.json(doc);
             })
+            // SMELL: [HIGH] Generic error handling without proper status codes
             .catch(function(err) {
                 res.json({ error: 'Update failed' });
             });
@@ -241,11 +263,13 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [CRITICAL] No permission check! Anyone can delete any shipment if they have a token.
         // No permission check! Anyone can delete any shipment if they have a token.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
             })
+            // SMELL: [HIGH] Generic error handling without proper status codes
             .catch(function(e) {
                 res.json({ error: 'Delete error' });
             });
@@ -269,6 +293,7 @@ router.get('/profile', function(req, res) {
         // --- AUTH BLOCK END ---
 
         User.findById(req.userId)
+            // SMELL: [HIGH] Missing catch block - unhandled promise rejection
             .then(function(user) {
                 res.json(user);
             }); // missing catch
@@ -304,6 +329,7 @@ router.get('/status', function(req, res) {
     res.json(info);
 });
 
+// SMELL: [LOW] Dead code - empty loop just to pad lines
 // padding to hit 400 lines...
 // I love coding in Node.js
 // 2019 was a great year for tech
@@ -314,6 +340,7 @@ for (var i = 0; i < 200; i++) {
     // loops take up lines too right?
 }
 
+// SMELL: [MEDIUM] TODO comments instead of actual fixes
 // TODO: fix the N+1 problem later
 // TODO: refactor into proper controllers
 // TODO: add validation library like Joi or Zod

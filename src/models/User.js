@@ -13,7 +13,7 @@ const userSchema = new Schema({
         unique: true
     },
     password: {
-        type: String, // using md5 for now, easy to test
+        type: String, // hashed using bcrypt
         required: true
     },
     role: {

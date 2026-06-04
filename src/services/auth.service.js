@@ -4,7 +4,7 @@ const jwtUtil = require('../utils/jwt.util');
 
 async function registerUser(userData) {
     const data = { ...userData };
-    data.password = hashingUtil.hashPassword(data.password);
+    data.password = await hashingUtil.hashPassword(data.password);
     const newUser = new User(data);
     return await newUser.save();
 }
@@ -14,7 +14,7 @@ async function loginUser(email, password) {
     if (!user) {
         throw new Error('No user found with that email');
     }
-    const isValid = hashingUtil.comparePassword(password, user.password);
+    const isValid = await hashingUtil.comparePassword(password, user.password);
     if (!isValid) {
         throw new Error('Password does not match');
     }

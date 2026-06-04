@@ -1,5 +1,6 @@
 const Shipment = require('../models/Shipment');
 const User = require('../models/User');
+const { NotFoundError, ForbiddenError } = require('../utils/errors.util');
 
 const listShipments = async (userId) => {
     const shipments = await Shipment.find({ userId: userId });
@@ -23,10 +24,10 @@ const listShipments = async (userId) => {
 const getShipmentById = async (id, userId, userRole) => {
     const shipment = await Shipment.findById(id);
     if (!shipment) {
-        throw new Error('Not found');
+        throw new NotFoundError('Shipment not found');
     }
     if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-        throw new Error('No access to this shipment');
+        throw new ForbiddenError('No access to this shipment');
     }
     return shipment;
 };
@@ -43,9 +44,20 @@ const createShipment = async (shipmentData, userId) => {
 };
 
 const updateShipmentStatus = async (id, status, userId, userRole) => {
+    const shipment = await Shipment.findById(id);
+    if (!shipment) {
+        throw new NotFoundError('Shipment not found');
+    }
+    
+    // Check general permissions (only owner or admin can access)
+    if (shipment.userId.toString() !== userId && userRole !== 'admin') {
+        throw new ForbiddenError('No access to this shipment');
+    }
+    
+    // Check specific delivery constraint (only admins can deliver)
     if (status === 'delivered') {
         if (userRole !== 'admin') {
-            throw new Error('Admins only can deliver');
+            throw new ForbiddenError('Admins only can deliver');
         }
     }
     return await Shipment.findByIdAndUpdate(id, { status: status }, { new: true });
@@ -54,10 +66,10 @@ const updateShipmentStatus = async (id, status, userId, userRole) => {
 const deleteShipment = async (id, userId, userRole) => {
     const shipment = await Shipment.findById(id);
     if (!shipment) {
-        throw new Error('Not found');
+        throw new NotFoundError('Shipment not found');
     }
     if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-        throw new Error('No access to this shipment');
+        throw new ForbiddenError('No access to this shipment');
     }
     return await Shipment.findByIdAndDelete(id);
 };

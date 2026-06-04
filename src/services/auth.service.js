@@ -1,10 +1,16 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { ConflictError, UnauthorizedError, NotFoundError } = require('../utils/errors.util');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 const register = async (userData) => {
+    const existingUser = await User.findOne({ email: userData.email });
+    if (existingUser) {
+        throw new ConflictError('Email already registered');
+    }
+    
     const data = { ...userData };
     // Hash password using bcrypt with 12 rounds
     data.password = await bcrypt.hash(data.password, 12);
@@ -15,13 +21,13 @@ const register = async (userData) => {
 const login = async (email, password) => {
     const user = await User.findOne({ email: email });
     if (!user) {
-        throw new Error('No user found with that email');
+        throw new UnauthorizedError('Invalid credentials');
     }
     
     // Compare passwords using bcrypt.compare
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-        throw new Error('Password does not match');
+        throw new UnauthorizedError('Invalid credentials');
     }
     
     const token = jwt.sign(
@@ -40,7 +46,11 @@ const login = async (email, password) => {
 };
 
 const getProfile = async (userId) => {
-    return await User.findById(userId);
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new NotFoundError('User not found');
+    }
+    return user;
 };
 
 module.exports = {

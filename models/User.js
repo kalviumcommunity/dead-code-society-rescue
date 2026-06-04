@@ -13,6 +13,7 @@ var userSchema = new Schema({
         unique: true
     },
     password: {
+        // SMELL: [HIGH] User model schema lacks basic validation on email formatting and password strength.
         type: String, // using md5 for now, easy to test
         required: true
     },

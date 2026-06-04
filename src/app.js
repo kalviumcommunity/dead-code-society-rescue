@@ -21,6 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
 var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+// SMELL: [MEDIUM] Deprecated mongoose configuration options (useNewUrlParser, useUnifiedTopology, useCreateIndex, useFindAndModify) are used.
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -43,6 +44,7 @@ app.get('/', function(req, res) {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
+// SMELL: [HIGH] Lack of global 404 handler and error handling middleware leaves exceptions unhandled or returned as HTML instead of JSON.
 // no 404 handler here, let express handle it for now
 
 // start server

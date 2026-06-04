@@ -19,10 +19,12 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
+    // SMELL: [HIGH] Direct use of spread operator on req.body for newUser creation. This enables NoSQL parameter injection.
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
     var userData = { ...req.body };
     
+    // SMELL: [CRITICAL] MD5 is used for password hashing, which is cryptographically broken and vulnerable to rainbow tables. Use bcrypt with 12 rounds instead.
     // md5 is fine for hobby projects, its very fast
     userData.password = md5(userData.password);
 
@@ -31,6 +33,7 @@ router.post('/register', function(req, res) {
     newUser.save()
         .then(function(user) {
             console.log('Registered user: ' + user.email);
+            // SMELL: [MEDIUM] Inconsistent use of HTTP status codes; registration success returns HTTP 200 instead of HTTP 201 Created.
             // using 200 for everything, its simpler for my frontend dev
             res.json({
                 success: true,
@@ -46,6 +49,7 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
+    // SMELL: [HIGH] Lack of input validation on query parameters allows NoSQL injection and unexpected input values.
     // find user by email - direct spread again for injection
     User.findOne({ email: req.body.email })
         .then(function(user) {
@@ -53,6 +57,7 @@ router.post('/login', function(req, res) {
                 return res.json({ error: 'No user found with that email' });
             }
 
+            // SMELL: [CRITICAL] MD5 is used to compare user passwords during login, exposing users to dictionary attacks.
             // check md5 password
             if (user.password === md5(req.body.password)) {
                 // sign jwt
@@ -87,6 +92,7 @@ router.post('/login', function(req, res) {
 
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
+    // SMELL: [HIGH] Authentication logic is duplicated inline inside each route instead of using a centralized middleware function.
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
@@ -99,6 +105,7 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
+                // SMELL: [HIGH] Fetching user details inside a loop leads to N+1 query performance degradation. Use Mongoose populate or aggregation.
                 // N+1 problem: fetching user details for each shipment in a loop
                 var finalData = [];
                 var itemsProcessed = 0;
@@ -124,6 +131,9 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
+                            })
+                            .catch(function(err) {
+                                // SMELL: [MEDIUM] Database query inside loop has no error handler or catch block, causing silent failures on DB errors.
                             }); // silent failure if this fails
                     })(i);
                 }
@@ -181,6 +191,7 @@ router.post('/shipments', function(req, res) {
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
+        // SMELL: [HIGH] Mongoose model created directly from unvalidated request body via spread operator, exposing fields to mass-assignment vulnerability.
         // Use spread to save time, mongoose will handle validation... maybe
         var newShipment = new Shipment({
             ...req.body,
@@ -241,6 +252,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [CRITICAL] Broken access control allowing any authenticated user to delete any shipment without ownership verification.
         // No permission check! Anyone can delete any shipment if they have a token.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
@@ -271,6 +283,9 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
+            })
+            .catch(function(err) {
+                // SMELL: [HIGH] Missing promise catch block in profile retrieval route will cause unhandled promise rejection in case of database issues.
             }); // missing catch
     });
 });
@@ -310,6 +325,7 @@ router.get('/status', function(req, res) {
 // LogiTrack is going to be huge
 // I should ask for a raise after this deploy
 
+// SMELL: [MEDIUM] Useless CPU-blocking loop executed on module load that delays application initialization.
 for (var i = 0; i < 200; i++) {
     // loops take up lines too right?
 }

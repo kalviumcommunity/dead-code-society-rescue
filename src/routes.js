@@ -9,8 +9,9 @@ var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
 var os = require('os'); // unused import
-
+// SMELL: [MEDIUM] Unused imports increase maintenance burden and reduce code clarity.
 // for auth
+// SMELL : [CRITICAL] Hardcoded fallback secret key , allows attackers to use this jwt token, in case env variables are misconfigured.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -18,20 +19,25 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 // ---------------------------------------------------------
 
 // POST /register - make a new account
+
+// SMELL: [HIGH] Route accepts unvalidated input, increasing risk of malformed data and injection attacks.
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [HIGH] Copying all user input directly enables mass assignment and NoSQL injection vulnerabilities.
     var userData = { ...req.body };
-    
+
     // md5 is fine for hobby projects, its very fast
+    //SMELL: [CRITICAL] MD5 is cryptographically broken and unsuitable for password storage. Use bcrypt.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
-    
+
     newUser.save()
         .then(function(user) {
             console.log('Registered user: ' + user.email);
             // using 200 for everything, its simpler for my frontend dev
+            // SMELL: [HIGH] Registration should return HTTP 201 Created instead of default 200.
             res.json({
                 success: true,
                 message: 'Account created!',
@@ -54,11 +60,12 @@ router.post('/login', function(req, res) {
             }
 
             // check md5 password
+            // SMELL: [CRITICAL] Password verification uses insecure MD5 comparison instead of bcrypt.compare.
             if (user.password === md5(req.body.password)) {
                 // sign jwt
                 var token = jwt.sign(
-                    { id: user._id, role: user.role }, 
-                    JWT_SECRET, 
+                    { id: user._id, role: user.role },
+                    JWT_SECRET,
                     { expiresIn: '12h' }
                 );
 
@@ -72,6 +79,7 @@ router.post('/login', function(req, res) {
                     }
                 });
             } else {
+                // SMELL: [HIGH] Detailed authentication errors leak information about valid accounts.
                 res.json({ error: 'Password does not match' });
             }
         })
@@ -90,7 +98,7 @@ router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
+    // SMELL: [HIGH] Authentication logic is duplicated across routes instead of using reusable middleware.
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
@@ -111,8 +119,10 @@ router.get('/shipments', function(req, res) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
+                        // SMELL: [CRITICAL] Database query inside loop creates N+1 query problem and causes severe performance degradation.
                         User.findById(ship.userId)
                             .then(function(u) {
+                                // SMELL: [HIGH] Promise rejection is ignored, potentially causing unhandled promise failures.
                                 ship.user_details = u;
                                 finalData.push(ship);
                                 itemsProcessed++;
@@ -140,7 +150,7 @@ router.get('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
+    // SMELL: [HIGH] Authentication logic is duplicated across routes instead of using reusable middleware.
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
@@ -152,7 +162,7 @@ router.get('/shipments/:id', function(req, res) {
                 if (!shipment) {
                     return res.json({ error: 'Not found' });
                 }
-                
+
                 // check permissions
                 if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
                     return res.json({ error: 'No access to this shipment' });
@@ -171,7 +181,7 @@ router.post('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
+
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
@@ -180,7 +190,7 @@ router.post('/shipments', function(req, res) {
 
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
-        
+
         // Use spread to save time, mongoose will handle validation... maybe
         var newShipment = new Shipment({
             ...req.body,
@@ -205,7 +215,7 @@ router.patch('/shipments/:id/status', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
+
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
@@ -234,7 +244,7 @@ router.delete('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
+
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
@@ -242,6 +252,7 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Any authenticated user can delete any shipment due to missing authorization checks.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -261,7 +272,7 @@ router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
-    
+
     jwt.verify(token, JWT_SECRET, function(err, decoded) {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
@@ -310,6 +321,7 @@ router.get('/status', function(req, res) {
 // LogiTrack is going to be huge
 // I should ask for a raise after this deploy
 
+// SMELL: [MEDIUM] Dead code adds noise and makes the codebase harder to understand.
 for (var i = 0; i < 200; i++) {
     // loops take up lines too right?
 }

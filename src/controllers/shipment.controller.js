@@ -1,6 +1,13 @@
 const shipmentService = require('../services/shipment.service');
 const { UnauthorizedError, NotFoundError } = require('../utils/errors.util');
 
+/**
+ * Handles fetching all shipments.
+ *
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ */
 const getShipments = async (req, res, next) => {
     try {
         const result = await shipmentService.getShipments(req.userId);
@@ -10,11 +17,18 @@ const getShipments = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles fetching a single shipment by ID.
+ *
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ */
 const getShipmentById = async (req, res, next) => {
     try {
         const shipment = await shipmentService.getShipmentById(req.params.id);
         if (!shipment) throw new NotFoundError('Shipment not found');
-        if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+        if (shipment.userId._id.toString() !== req.userId && req.userRole !== 'admin') {
             throw new UnauthorizedError('No access to this shipment');
         }
         res.json(shipment);
@@ -23,6 +37,13 @@ const getShipmentById = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles creation of a shipment.
+ *
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ */
 const createShipment = async (req, res, next) => {
     try {
         const saved = await shipmentService.createShipment(req.body, req.userId);
@@ -32,6 +53,13 @@ const createShipment = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles updating a shipment's status.
+ *
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ */
 const updateStatus = async (req, res, next) => {
     try {
         if (req.body.status === 'delivered') {
@@ -44,6 +72,13 @@ const updateStatus = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles deleting a shipment.
+ *
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ */
 const deleteShipment = async (req, res, next) => {
     try {
         await shipmentService.deleteShipment(req.params.id);

@@ -1,57 +1,69 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+LogiTrack is a Node.js + MongoDB API for managing shipments and users. This repository uses Express and Mongoose, and now follows a simple MVC layout.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Features
+- JWT authentication for users
+- Shipment creation and tracking
+- Admin-only delivery status updates
+- Centralized error handling and input validation
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+## Project Structure
+```
+src/
+	app.js
+	config/
+		db.js
+	controllers/
+	middlewares/
+	models/
+	routes/
+	utils/
+	validators/
+```
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Getting Started
 
-### 1. Installation
-Clone the repo and install the dependencies:
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+### 2. Configure environment
+Create a `.env` file (see `.env.example`):
+
+```
+PORT=3000
+DATABASE_URL=mongodb://localhost:27017/logitrack
+JWT_SECRET=change_me
+BCRYPT_SALT_ROUNDS=12
+```
+
+### 3. Start the server
 ```bash
 npm run dev
 ```
-Or start in production:
-```bash
-npm start
-```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## API Endpoints
+All routes are under `/api`.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+| POST | `/login` | Get a JWT token |
+| GET | `/shipments` | List shipments for current user |
+| GET | `/shipments/:id` | Get shipment details |
+| POST | `/shipments` | Create shipment |
+| PATCH | `/shipments/:id/status` | Update shipment status |
+| DELETE | `/shipments/:id` | Delete shipment |
+| GET | `/profile` | Current user profile |
+| GET | `/status` | Health status |
+| GET | `/ping` | Ping endpoint |
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+## Notes
+- JWT must be passed via `Authorization: Bearer <token>`.
+- Admin-only delivery updates are enforced when status is `delivered`.
 
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+## Scripts
+- `npm run dev` start in watch mode
+- `npm start` run in production

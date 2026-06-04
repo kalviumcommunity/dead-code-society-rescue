@@ -1,57 +1,144 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack — Shipment Tracking Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+> REST API for tracking shipments built with Node.js, Express, and MongoDB.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js |
+| Framework | Express 4 |
+| Database | MongoDB + Mongoose |
+| Auth | JWT (jsonwebtoken) |
+| Validation | Joi |
+| Hashing | bcrypt |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Quick Start
 
-### 1. Installation
-Clone the repo and install the dependencies:
-```bash
+# 1. Clone and install
+git clone https://github.com/kalviumcommunity/dead-code-society-rescue.git
+cd dead-code-society-rescue
 npm install
-```
 
-### 2. Start the Engine
-Run the development server:
-```bash
+# 2. Set up environment
+cp .env.example .env
+# Edit .env and fill in DATABASE_URL and JWT_SECRET
+
+# 3. Start MongoDB locally
+mongod --dbpath ./data
+
+# 4. Start the dev server
 npm run dev
+
+## Environment Variables
+
+| Variable | Example | Required | Description |
+|----------|---------|----------|-------------|
+| PORT | 3000 | Yes | Server port |
+| DATABASE_URL | mongodb://localhost:27017/logitrack | Yes | MongoDB connection string |
+| JWT_SECRET | some-long-random-string-min-32-chars | Yes | JWT signing secret (min 32 chars) |
+| NODE_ENV | development | No | development or production |
+
+## API Reference
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | /api/register | No | Register new user |
+| POST | /api/login | No | Login, receive JWT |
+| GET | /api/profile | Yes | Get current user profile |
+| GET | /api/shipments | Yes | List my shipments |
+| POST | /api/shipments | Yes | Create shipment |
+| GET | /api/shipments/:id | Yes | Get single shipment |
+| PATCH | /api/shipments/:id/status | Yes | Update status (admin only for 'delivered') |
+| DELETE | /api/shipments/:id | Yes | Delete shipment |
+| GET | / | No | Welcome message |
+| GET | /ping | No | Health check |
+
+## Architecture
+
 ```
-Or start in production:
+Request
+  └─► Router (routes/)
+        └─► Controller (controllers/)
+              └─► Service (services/)
+                    └─► Model (models/)
+                          └─► MongoDB
+```
+
+### Folder Structure
+
+```
+src/
+├── routes/
+│   ├── auth.routes.js
+│   ├── user.routes.js
+│   └── shipment.routes.js
+├── controllers/
+│   ├── auth.controller.js
+│   ├── user.controller.js
+│   └── shipment.controller.js
+├── services/
+│   ├── auth.service.js
+│   ├── user.service.js
+│   └── shipment.service.js
+├── models/
+│   ├── User.model.js
+│   └── Shipment.model.js
+├── middlewares/
+│   ├── auth.middleware.js
+│   ├── validate.middleware.js
+│   ├── error.middleware.js
+│   └── notFound.middleware.js
+├── validators/
+│   ├── auth.validator.js
+│   └── shipment.validator.js
+├── utils/
+│   ├── errors.util.js
+│   ├── jwt.util.js
+│   └── hash.util.js
+└── server.js
+```
+
+## Security Features
+
+- **bcrypt** password hashing with 12 salt rounds
+- **Joi** input validation on all request bodies
+- **JWT** token-based authentication
+- **Centralized error handling** to prevent information leakage
+- **NoSQL injection prevention** through input sanitization
+
+## Example Usage
+
+### Register a User
 ```bash
-npm start
+curl -X POST http://localhost:3000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "SecurePass123"
+  }'
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+### Login
+```bash
+curl -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "SecurePass123"
+  }'
+```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
-
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
-
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+### Create a Shipment (requires JWT)
+```bash
+curl -X POST http://localhost:3000/api/shipments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: YOUR_JWT_TOKEN" \
+  -d '{
+    "origin": "New York, NY",
+    "destination": "Los Angeles, CA",
+    "weight": 5.5,
+    "carrier": "FedEx"
+  }'
+```

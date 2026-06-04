@@ -1,7 +1,7 @@
-var express = require('express');
-var router = express.Router();
-var userController = require('../controllers/user.controller');
-var authenticate = require('../middlewares/auth.middleware');
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/user.controller');
+const authenticate = require('../middlewares/auth.middleware');
 
 router.get('/profile', authenticate, userController.getProfile);
 

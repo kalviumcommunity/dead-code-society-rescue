@@ -1,9 +1,9 @@
-var express = require('express');
-var router = express.Router();
-var os = require('os');
+const express = require('express');
+const router = express.Router();
+const os = require('os');
 
-router.get('/status', function(req, res) {
-    var info = {
+router.get('/status', (req, res) => {
+    const info = {
         os: os.type(),
         release: os.release(),
         uptime: process.uptime(),
@@ -12,7 +12,7 @@ router.get('/status', function(req, res) {
     res.json(info);
 });
 
-router.get('/ping', function(req, res) {
+router.get('/ping', (req, res) => {
     res.json({ pong: 'active' });
 });
 

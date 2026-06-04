@@ -1,7 +1,7 @@
-var User = require('../models/User');
+const User = require('../models/User');
 
-function getProfile(userId) {
-    return User.findById(userId);
-}
+const getProfile = async (userId) => {
+    return await User.findById(userId);
+};
 
 module.exports = { getProfile };

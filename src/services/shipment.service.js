@@ -1,79 +1,64 @@
-var Shipment = require('../models/Shipment');
-var User = require('../models/User');
+const Shipment = require('../models/Shipment');
+const User = require('../models/User');
 
-function getUserShipments(userId) {
-    return Shipment.find({ userId: userId })
-        .then(function(shipments) {
-            var finalData = [];
-            var itemsProcessed = 0;
+const getUserShipments = async (userId) => {
+    const shipments = await Shipment.find({ userId: userId });
+    const finalData = [];
+    
+    if (shipments.length === 0) {
+        return { shipments: [] };
+    }
 
-            if (shipments.length === 0) {
-                return { shipments: [] };
-            }
+    for (let i = 0; i < shipments.length; i++) {
+        const ship = shipments[i].toObject();
+        // SMELL: [HIGH] N+1 Query Problem. Fetching user inside a loop for each shipment. Use populate() instead.
+        const u = await User.findById(ship.userId);
+        ship.user_details = u;
+        finalData.push(ship);
+    }
+    
+    return {
+        status: 'success',
+        results: finalData.length,
+        data: finalData
+    };
+};
 
-            return new Promise(function(resolve, reject) {
-                for (var i = 0; i < shipments.length; i++) {
-                    (function(idx) {
-                        var ship = shipments[idx].toObject();
-                        // SMELL: [HIGH] N+1 Query Problem. Fetching user inside a loop for each shipment. Use populate() instead.
-                        User.findById(ship.userId)
-                            .then(function(u) {
-                                ship.user_details = u;
-                                finalData.push(ship);
-                                itemsProcessed++;
+const getShipmentById = async (id, userId, userRole) => {
+    const shipment = await Shipment.findById(id);
+    if (!shipment) {
+        return { error: 'Not found' };
+    }
+    if (shipment.userId.toString() !== userId && userRole !== 'admin') {
+        return { error: 'No access to this shipment' };
+    }
+    return shipment;
+};
 
-                                if (itemsProcessed === shipments.length) {
-                                    resolve({
-                                        status: 'success',
-                                        results: finalData.length,
-                                        data: finalData
-                                    });
-                                }
-                            })
-                            .catch(reject);
-                    })(i);
-                }
-            });
-        });
-}
-
-function getShipmentById(id, userId, userRole) {
-    return Shipment.findById(id)
-        .then(function(shipment) {
-            if (!shipment) {
-                return { error: 'Not found' };
-            }
-            if (shipment.userId.toString() !== userId && userRole !== 'admin') {
-                return { error: 'No access to this shipment' };
-            }
-            return shipment;
-        });
-}
-
-function createShipment(data, userId) {
-    var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
-    var newShipment = new Shipment({
+const createShipment = async (data, userId) => {
+    const trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
+    const newShipment = new Shipment({
         ...data,
         trackingId: trackId,
         userId: userId,
         status: 'pending'
     });
-    return newShipment.save();
-}
+    return await newShipment.save();
+};
 
-function updateShipmentStatus(id, status, userRole) {
+const updateShipmentStatus = async (id, status, userRole) => {
     if (status === 'delivered') {
         if (userRole !== 'admin') {
-            return Promise.resolve({ error: 'Admins only can deliver' });
+            return { error: 'Admins only can deliver' };
         }
     }
-    return Shipment.findByIdAndUpdate(id, { status: status }, { new: true });
-}
+    return await Shipment.findByIdAndUpdate(id, { status: status }, { new: true });
+};
 
-function deleteShipment(id) {
+const deleteShipment = async (id) => {
     // SMELL: [HIGH] Missing authorization check. Any authenticated user can delete any shipment.
-    return Shipment.findByIdAndDelete(id);
-}
+    return await Shipment.findByIdAndDelete(id);
+};
 
 module.exports = {
     getUserShipments, getShipmentById, createShipment, updateShipmentStatus, deleteShipment

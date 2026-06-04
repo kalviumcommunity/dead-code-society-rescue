@@ -1,32 +1,31 @@
 require('dotenv').config();
-// SMELL: [MEDIUM] var used everywhere causing function-scoped hoisting bugs. Use const/let.
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
-var authRoutes = require('./routes/auth.routes');
-var shipmentRoutes = require('./routes/shipment.routes');
-var userRoutes = require('./routes/user.routes');
-var statusRoutes = require('./routes/status.routes');
+const authRoutes = require('./routes/auth.routes');
+const shipmentRoutes = require('./routes/shipment.routes');
+const userRoutes = require('./routes/user.routes');
+const statusRoutes = require('./routes/status.routes');
 
-var app = express();
+const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
     useFindAndModify: false
 })
-.then(function() {
+.then(() => {
     console.log('--- DATABASE CONNECTED ---');
 })
-.catch(function(err) {
+.catch((err) => {
     console.log('DATABASE CONNECTION ERROR:');
     console.log(err);
 });
@@ -36,12 +35,12 @@ app.use('/api/shipments', shipmentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', statusRoutes);
 
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');
 });

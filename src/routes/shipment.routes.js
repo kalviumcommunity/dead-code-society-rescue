@@ -1,7 +1,7 @@
-var express = require('express');
-var router = express.Router();
-var shipmentController = require('../controllers/shipment.controller');
-var authenticate = require('../middlewares/auth.middleware');
+const express = require('express');
+const router = express.Router();
+const shipmentController = require('../controllers/shipment.controller');
+const authenticate = require('../middlewares/auth.middleware');
 
 router.use(authenticate);
 

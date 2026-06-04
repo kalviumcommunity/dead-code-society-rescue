@@ -1,59 +1,58 @@
-// SMELL: [MEDIUM] Uses deprecated body-parser package. Express 4.16+ has express.json() built-in.
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-// SMELL: [MEDIUM] Unused import. path is imported but never used.
-var path = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const routes = require('./routes');
+const { errorHandler } = require('./middlewares/errorHandler.middleware');
 
-// SMELL: [MEDIUM] Redundant model imports. Models are loaded here but only used in routes.js.
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+const app = express();
 
-// routes
-var routes = require('./routes');
-
-var app = express();
-
-// middleware setup
+// --------------- Middleware ---------------
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
+// --------------- Database ----------------
+const connectDB = async () => {
+  try {
+    const mongoUrl = process.env.DATABASE_URL;
+    if (!mongoUrl) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
+    await mongoose.connect(mongoUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useCreateIndex: true,
+      useFindAndModify: false,
+    });
+    console.log('✅ Database connected');
+  } catch (err) {
+    console.error('❌ Database connection error:', err.message);
+    process.exit(1);
+  }
+};
+
+connectDB();
+
+// --------------- Routes ------------------
+app.use('/api', routes);
+
+app.get('/', (_req, res) => {
+  res.json({ message: 'LogiTrack API v2.0.0' });
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
-
-// welcome route
-app.get('/', function(req, res) {
-    res.json({ message: 'LogiTrack Backend running' });
+// 404 handler
+app.use((_req, res) => {
+  res.status(404).json({ success: false, error: 'Route not found' });
 });
 
-// no 404 handler here, let express handle it for now
+// Centralized error handler (must be last middleware)
+app.use(errorHandler);
 
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
-    console.log('Server is alive on port ' + PORT);
-    console.log('Wait for MongoDB before testing...');
+// --------------- Server ------------------
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// exporting for testing later
 module.exports = app;

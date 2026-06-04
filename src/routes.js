@@ -1,16 +1,15 @@
-var express = require('express');
-var router = express.Router();
-var User = require('../models/User'); // user model
-var Shipment = require('../models/Shipment'); // shipment model
-var jwt = require('jsonwebtoken'); // auth
-var md5 = require('md5'); // md5 hashing
-var mongoose = require('mongoose'); // for id checking
-var path = require('path'); // unused import
-var fs = require('fs'); // unused import
-var http = require('http'); // unused import
-var os = require('os'); // unused import
+const express = require('express');
+const router = express.Router();
+
+const User = require('../models/User');
+const Shipment = require('../models/Shipment');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+
+const os = require('os');
 
 // for auth
+// SMELL: [CRITICAL] Uses a hardcoded fallback JWT secret which can be easily guessed.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -21,9 +20,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] Directly spreading req.body allows users to inject unexpected fields into the database.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    //SMELL: [CRITICAL] MD5 is insecure and should be replaced with bcrypt
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -88,6 +89,8 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Uses var instead of const/let, reducing code clarity and scope safety.
+    // SMELL: [HIGH] Authentication logic is duplicated across multiple routes instead of using middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -186,6 +189,7 @@ router.post('/shipments', function(req, res) {
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
+            // SMELL: [MEDIUM] Uses hardcoded magic strings instead of constants or enums.
             status: 'pending' // magic string
         });
 
@@ -242,6 +246,7 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Missing ownership check allows authenticated users to delete shipments they do not own.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -267,7 +272,7 @@ router.get('/profile', function(req, res) {
         req.userId = decoded.id;
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
-
+        // SMELL: [HIGH] Missing catch block can cause unhandled promise rejections.
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
@@ -309,6 +314,7 @@ router.get('/status', function(req, res) {
 // 2019 was a great year for tech
 // LogiTrack is going to be huge
 // I should ask for a raise after this deploy
+// SMELL: [MEDIUM] Dead code used only to increase file size and decreases maintainability.
 
 for (var i = 0; i < 200; i++) {
     // loops take up lines too right?

@@ -1,56 +1,66 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
-// routes
-var routes = require('./routes');
+// Models
+const User = require('../models/User');
+const Shipment = require('../models/Shipment');
 
-var app = express();
+// Route Imports
+const authRoutes = require('./routes/auth.routes');
+const shipmentRoutes = require('./routes/shipment.routes');
+const userRoutes = require('./routes/user.routes');
+const systemRoutes = require('./routes/system.routes');
 
-// middleware setup
+const app = express();
+
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
+// Database Connection
+const mongoUrl =
+  process.env.DATABASE_URL ||
+  'mongodb://localhost:27017/logitrack';
+
+mongoose
+  .connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
     useFindAndModify: false
-})
-.then(function() {
+  })
+  .then(function () {
     console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
+  })
+  .catch(function (err) {
     console.log('DATABASE CONNECTION ERROR:');
     console.log(err);
+  });
+
+// Routes
+app.use('/api', authRoutes);
+app.use('/api', shipmentRoutes);
+app.use('/api', userRoutes);
+app.use('/api', systemRoutes);
+
+// Home Route
+app.get('/', function (req, res) {
+  res.json({
+    message: 'LogiTrack Backend running'
+  });
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
+// Server
+const PORT = process.env.PORT || 3000;
 
-// welcome route
-app.get('/', function(req, res) {
-    res.json({ message: 'LogiTrack Backend running' });
+app.listen(PORT, function () {
+  console.log('Server is alive on port ' + PORT);
+  console.log('Wait for MongoDB before testing...');
 });
 
-// no 404 handler here, let express handle it for now
-
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
-    console.log('Server is alive on port ' + PORT);
-    console.log('Wait for MongoDB before testing...');
-});
-
-// exporting for testing later
 module.exports = app;

@@ -21,7 +21,7 @@ if (!mongoUrl) {
     throw new Error('DATABASE_URL is required');
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 async function startServer() {
     try {

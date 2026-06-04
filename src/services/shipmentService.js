@@ -3,7 +3,13 @@ const { sanitizeUser } = require('./authService');
 const { NotFoundError, UnauthorizedError, ConflictError } = require('../utils/errors.util');
 
 function canAccessShipment(shipment, user) {
-    return user.role === 'admin' || shipment.userId.toString() === String(user.id);
+    if (user.role === 'admin') return true;
+
+    // shipment.userId may be an ObjectId or a populated User document.
+    const shipmentUserId = shipment.userId && shipment.userId._id ? shipment.userId._id : shipment.userId;
+
+    // Coerce both sides to string for reliable comparison.
+    return String(shipmentUserId) === String(user.id);
 }
 
 function normalizeShipment(shipment) {
@@ -46,6 +52,17 @@ async function listShipmentsForUser(user) {
  */
 async function getShipmentById(id, user) {
     const shipment = await Shipment.findById(id).populate('userId');
+
+    // Temporary debug logging to help diagnose ownership checks.
+    try {
+        console.log('DEBUG getShipmentById - user.id:', user && user.id, 'typeof:', typeof (user && user.id));
+        console.log('DEBUG getShipmentById - shipment.userId:', shipment && shipment.userId, 'typeof:', typeof (shipment && shipment.userId));
+        if (shipment && shipment.userId && shipment.userId._id) {
+            console.log('DEBUG getShipmentById - shipment.userId._id:', String(shipment.userId._id));
+        }
+    } catch (e) {
+        // ignore logging errors
+    }
 
     if (!shipment) {
         throw new NotFoundError('Not found');

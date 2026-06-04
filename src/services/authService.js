@@ -10,7 +10,7 @@ const { ConflictError, NotFoundError, UnauthorizedError } = require('../utils/er
  */
 function sanitizeUser(user) {
     return {
-        id: user._id,
+        id: String(user._id),
         name: user.name,
         email: user.email,
         role: user.role,
@@ -72,7 +72,7 @@ async function loginUser(payload) {
 
     return {
         token: signToken({
-            id: user._id,
+            id: String(user._id),
             role: user.role
         }),
         user: {

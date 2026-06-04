@@ -30,8 +30,9 @@ function auth(req, res, next) {
 
     try {
         const decoded = tokenUtils.verifyToken(token);
+        // ensure id is a string so ownership checks work reliably
         req.user = {
-            id: decoded.id,
+            id: String(decoded.id),
             role: decoded.role
         };
         return next();

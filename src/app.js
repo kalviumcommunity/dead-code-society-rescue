@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const { errorHandler } = require('./middlewares/error.middleware');
+const { NotFoundError } = require('./utils/errors.util');
 
 // models are here
 const User = require('./models/User'); // manually load models
@@ -68,15 +70,21 @@ initDb();
 app.use('/api', routes); // all routes under /api
 
 // welcome route
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-// no 404 handler here, let express handle it for now
+// 404 handler for undefined routes
+app.use((req, res, next) => {
+    next(new NotFoundError(`Route ${req.originalUrl} not found`));
+});
+
+// centralized error handler
+app.use(errorHandler);
 
 // start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
+app.listen(PORT, () => {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');
 });

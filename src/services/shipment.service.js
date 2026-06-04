@@ -1,5 +1,6 @@
 const Shipment = require('../models/Shipment');
 const User = require('../models/User');
+const { NotFoundError } = require('../utils/errors.util');
 
 async function getShipments(userId) {
     const shipments = await Shipment.find({ userId: userId });
@@ -21,7 +22,11 @@ async function getShipments(userId) {
 }
 
 async function getShipmentById(id) {
-    return await Shipment.findById(id);
+    const shipment = await Shipment.findById(id);
+    if (!shipment) {
+        throw new NotFoundError('Shipment not found');
+    }
+    return shipment;
 }
 
 async function createShipment(shipmentData, userId) {
@@ -36,11 +41,19 @@ async function createShipment(shipmentData, userId) {
 }
 
 async function updateShipmentStatus(id, status) {
-    return await Shipment.findByIdAndUpdate(id, { status }, { new: true });
+    const doc = await Shipment.findByIdAndUpdate(id, { status }, { new: true });
+    if (!doc) {
+        throw new NotFoundError('Shipment not found');
+    }
+    return doc;
 }
 
 async function deleteShipment(id) {
-    return await Shipment.findByIdAndDelete(id);
+    const doc = await Shipment.findByIdAndDelete(id);
+    if (!doc) {
+        throw new NotFoundError('Shipment not found');
+    }
+    return doc;
 }
 
 module.exports = {

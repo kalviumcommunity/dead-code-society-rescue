@@ -1,6 +1,7 @@
 const shipmentService = require('../services/shipment.service');
+const { ForbiddenError } = require('../utils/errors.util');
 
-async function getShipments(req, res) {
+async function getShipments(req, res, next) {
     try {
         const data = await shipmentService.getShipments(req.userId);
         res.json({
@@ -9,63 +10,63 @@ async function getShipments(req, res) {
             data: data
         });
     } catch (err) {
-        console.log(err);
-        res.json({ error: 'Fetch failed' });
+        next(err);
     }
 }
 
-async function getShipmentById(req, res) {
+async function getShipmentById(req, res, next) {
     try {
         const shipment = await shipmentService.getShipmentById(req.params.id);
-        if (!shipment) {
-            return res.json({ error: 'Not found' });
-        }
         if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
-            return res.json({ error: 'No access to this shipment' });
+            throw new ForbiddenError('No access to this shipment');
         }
         res.json(shipment);
     } catch (err) {
-        res.json({ error: 'Error on findById' });
+        next(err);
     }
 }
 
-async function createShipment(req, res) {
+async function createShipment(req, res, next) {
     try {
         const saved = await shipmentService.createShipment(req.body, req.userId);
-        res.json(saved);
+        res.status(201).json(saved);
     } catch (err) {
-        console.log('Error saving shipment');
-        res.json({ error: err });
+        next(err);
     }
 }
 
-async function updateShipmentStatus(req, res) {
-    if (req.body.status === 'delivered') {
-        if (req.userRole !== 'admin') {
-            return res.json({ error: 'Admins only can deliver' });
-        }
-    }
+async function updateShipmentStatus(req, res, next) {
     try {
+        if (req.body.status === 'delivered') {
+            if (req.userRole !== 'admin') {
+                throw new ForbiddenError('Admins only can deliver');
+            }
+        }
         const doc = await shipmentService.updateShipmentStatus(req.params.id, req.body.status);
         res.json(doc);
     } catch (err) {
-        res.json({ error: 'Update failed' });
+        next(err);
     }
 }
 
-async function deleteShipment(req, res) {
+async function deleteShipment(req, res, next) {
     try {
+        // Enforce ownership check before deleting a shipment
+        const shipment = await shipmentService.getShipmentById(req.params.id);
+        if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+            throw new ForbiddenError('No access to delete this shipment');
+        }
         await shipmentService.deleteShipment(req.params.id);
         res.json({ message: 'Deleted ' + req.params.id });
     } catch (err) {
-        res.json({ error: 'Delete error' });
+        next(err);
     }
 }
 
 module.exports = {
-    getShipments: getShipments,
-    getShipmentById: getShipmentById,
-    createShipment: createShipment,
-    updateShipmentStatus: updateShipmentStatus,
-    deleteShipment: deleteShipment
+    getShipments,
+    getShipmentById,
+    createShipment,
+    updateShipmentStatus,
+    deleteShipment
 };

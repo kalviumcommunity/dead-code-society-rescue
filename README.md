@@ -1,57 +1,131 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack API
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+LogiTrack is a shipment tracking backend for small businesses. It provides user registration, JWT authentication, and CRUD-style shipment management with role-based status updates.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Layer | Technology |
+|-------|------------|
+| Runtime | Node.js |
+| Framework | Express 4 |
+| Database | MongoDB (Mongoose 5) |
+| Auth | JSON Web Tokens (`jsonwebtoken`) |
+| Validation | Joi |
+| Password hashing | bcrypt (12 rounds) |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Quick start
 
-### 1. Installation
-Clone the repo and install the dependencies:
 ```bash
+git clone https://github.com/kalviumcommunity/dead-code-society-rescue.git
+cd dead-code-society-rescue
+git checkout -b codebase-rescue
 npm install
-```
-
-### 2. Start the Engine
-Run the development server:
-```bash
+cp .env.example .env
+# Edit .env — set DATABASE_URL and JWT_SECRET
 npm run dev
 ```
-Or start in production:
+
+Server listens on `http://localhost:3000` by default. Ensure MongoDB is running locally (or use a cloud connection string).
+
+### Smoke test
+
 ```bash
-npm start
+# Health
+curl http://localhost:3000/api/health
+
+# Register
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane Doe","email":"jane@example.com","password":"password123"}'
+
+# Login (copy token from response)
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane@example.com","password":"password123"}'
+
+# Protected profile
+curl http://localhost:3000/api/profile \
+  -H "Authorization: Bearer YOUR_JWT_HERE"
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## Environment variables
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+| Name | Example | Required | Description |
+|------|---------|----------|-------------|
+| `PORT` | `3000` | No | HTTP port (default `3000`) |
+| `DATABASE_URL` | `mongodb://localhost:27017/logitrack` | Yes | MongoDB connection string |
+| `JWT_SECRET` | `long-random-string` | Yes | Secret used to sign and verify JWTs |
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+## API reference
 
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
+Base path: `/api`. Send JWT as `Authorization: Bearer <token>` (raw token also supported for legacy clients).
 
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/health` | No | Liveness check |
+| GET | `/ping` | No | Simple pong response |
+| GET | `/status` | No | Server diagnostics |
+| POST | `/auth/register` | No | Create account (bcrypt password) |
+| POST | `/auth/login` | No | Login and receive JWT |
+| POST | `/register` | No | Legacy alias for register |
+| POST | `/login` | No | Legacy alias for login |
+| GET | `/profile` | Yes | Current user profile |
+| GET | `/shipments` | Yes | List caller's shipments (with owner populated) |
+| GET | `/shipments/:id` | Yes | Get one shipment (owner or admin) |
+| POST | `/shipments` | Yes | Create shipment |
+| PATCH | `/shipments/:id/status` | Yes | Update status (`delivered` requires admin) |
+| DELETE | `/shipments/:id` | Yes | Delete shipment (owner or admin) |
+
+## Architecture
+
+```
+                    ┌─────────────┐
+                    │   Client    │
+                    └──────┬──────┘
+                           │ HTTP
+                    ┌──────▼──────┐
+                    │   Routes    │  URL → controller
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+       ┌──────▼─────┐ ┌────▼────┐ ┌─────▼──────┐
+       │ Middleware │ │Controller│ │ Validators │
+       │ auth/validate│ │ req/res │ │   (Joi)    │
+       └──────┬─────┘ └────┬────┘ └────────────┘
+              │            │
+              │     ┌──────▼──────┐
+              │     │  Services   │  business logic
+              │     └──────┬──────┘
+              │            │
+              │     ┌──────▼──────┐
+              └────►│   Models    │  Mongoose / MongoDB
+                    └─────────────┘
+```
+
+### Folder layout
+
+```
+src/
+├── server.js           # DB connect + listen
+├── app.js              # Express app + global middleware
+├── routes/             # Route definitions only
+├── controllers/        # HTTP layer (req → service → res)
+├── services/           # Business logic
+├── models/             # Mongoose schemas
+├── middlewares/        # auth, validation, errors
+├── validators/         # Joi schemas
+└── utils/              # hash, JWT, errors, helpers
+```
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start with nodemon |
+| `npm start` | Production start |
+
+## Further reading
+
+- [AUDIT.md](./AUDIT.md) — pre-refactor issues and severities
+- [CHANGELOG.md](./CHANGELOG.md) — what changed and why

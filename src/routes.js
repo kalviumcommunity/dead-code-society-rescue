@@ -3,12 +3,9 @@ var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
-var md5 = require('md5'); // md5 hashing
+var bcrypt = require('bcryptjs'); // bcrypt hashing
 var mongoose = require('mongoose'); // for id checking
-var path = require('path'); // unused import
-var fs = require('fs'); // unused import
-var http = require('http'); // unused import
-var os = require('os'); // unused import
+var os = require('os');
 
 // for auth
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
@@ -19,12 +16,20 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
-    var userData = { ...req.body };
+    // Fix NoSQL injection by picking explicit fields
+    var userData = { 
+        name: req.body.name,
+        email: req.body.email,
+        role: req.body.role
+    };
     
-    // md5 is fine for hobby projects, its very fast
-    userData.password = md5(userData.password);
+    if (!req.body.password) {
+        return res.json({ success: false, error: 'Password is required' });
+    }
+    
+    // Use bcrypt for secure password hashing
+    var salt = bcrypt.genSaltSync(10);
+    userData.password = bcrypt.hashSync(req.body.password, salt);
 
     var newUser = new User(userData);
     
@@ -46,15 +51,16 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
-    User.findOne({ email: req.body.email })
+    // find user by email securely
+    var email = String(req.body.email);
+    User.findOne({ email: email })
         .then(function(user) {
             if (!user) {
                 return res.json({ error: 'No user found with that email' });
             }
 
-            // check md5 password
-            if (user.password === md5(req.body.password)) {
+            // check bcrypt password
+            if (bcrypt.compareSync(String(req.body.password), user.password)) {
                 // sign jwt
                 var token = jwt.sign(
                     { id: user._id, role: user.role }, 
@@ -98,35 +104,24 @@ router.get('/shipments', function(req, res) {
         // --- AUTH BLOCK END ---
 
         Shipment.find({ userId: req.userId })
+            .populate('userId')
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
-                var finalData = [];
-                var itemsProcessed = 0;
-
                 if (shipments.length === 0) {
                     return res.json({ shipments: [] });
                 }
 
-                for (var i = 0; i < shipments.length; i++) {
-                    (function(idx) {
-                        var ship = shipments[idx].toObject();
-                        // Calling DB inside a loop is standard right?
-                        User.findById(ship.userId)
-                            .then(function(u) {
-                                ship.user_details = u;
-                                finalData.push(ship);
-                                itemsProcessed++;
+                var finalData = shipments.map(function(ship) {
+                    var s = ship.toObject();
+                    s.user_details = s.userId;
+                    s.userId = s.userId._id; // Restore original userId field
+                    return s;
+                });
 
-                                if (itemsProcessed === shipments.length) {
-                                    res.json({
-                                        status: 'success',
-                                        results: finalData.length,
-                                        data: finalData
-                                    });
-                                }
-                            }); // silent failure if this fails
-                    })(i);
-                }
+                res.json({
+                    status: 'success',
+                    results: finalData.length,
+                    data: finalData
+                });
             })
             .catch(function(err) {
                 console.log(err);
@@ -181,12 +176,15 @@ router.post('/shipments', function(req, res) {
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
-        // Use spread to save time, mongoose will handle validation... maybe
+        // Use explicit fields to avoid NoSQL injection
         var newShipment = new Shipment({
-            ...req.body,
+            origin: req.body.origin,
+            destination: req.body.destination,
+            weight: req.body.weight,
+            carrier: req.body.carrier,
             trackingId: trackId,
             userId: req.userId,
-            status: 'pending' // magic string
+            status: 'pending'
         });
 
         newShipment.save()
@@ -241,13 +239,27 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
-        Shipment.findByIdAndDelete(req.params.id)
-            .then(function() {
-                res.json({ message: 'Deleted ' + req.params.id });
+        // Find shipment first to check permissions
+        Shipment.findById(req.params.id)
+            .then(function(shipment) {
+                if (!shipment) {
+                    return res.json({ error: 'Shipment not found' });
+                }
+                
+                if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+                    return res.json({ error: 'No permission to delete this shipment' });
+                }
+                
+                Shipment.findByIdAndDelete(req.params.id)
+                    .then(function() {
+                        res.json({ message: 'Deleted ' + req.params.id });
+                    })
+                    .catch(function(e) {
+                        res.json({ error: 'Delete error' });
+                    });
             })
             .catch(function(e) {
-                res.json({ error: 'Delete error' });
+                res.json({ error: 'Error finding shipment' });
             });
     });
 });
@@ -270,8 +282,14 @@ router.get('/profile', function(req, res) {
 
         User.findById(req.userId)
             .then(function(user) {
+                if (!user) {
+                    return res.json({ error: 'User not found' });
+                }
                 res.json(user);
-            }); // missing catch
+            })
+            .catch(function(err) {
+                res.json({ error: 'Error finding profile' });
+            });
     });
 });
 

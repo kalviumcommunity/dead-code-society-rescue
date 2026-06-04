@@ -1,3 +1,13 @@
+/**
+ * Global centralized error handling middleware.
+ * Intercepts all passed errors and formats them into JSON responses with correct HTTP status codes.
+ *
+ * @param {Error|import('../utils/errors.util').AppError} err - Error object thrown in controllers or services
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {void}
+ */
 const errorHandler = (err, req, res, next) => {
     let statusCode = err.statusCode || 500;
     let message = err.message || 'Internal Server Error';

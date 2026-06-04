@@ -2,25 +2,12 @@ const Shipment = require('../models/Shipment');
 const User = require('../models/User');
 
 const getShipments = async (userId) => {
-    const shipments = await Shipment.find({ userId: userId });
-    const finalData = [];
-
-    if (shipments.length === 0) {
-        return { shipments: [] };
-    }
-
-    for (let i = 0; i < shipments.length; i++) {
-        const ship = shipments[i].toObject();
-        // SMELL: [HIGH] N+1 Query Problem. Querying DB inside a loop causes n+1 network calls.
-        const u = await User.findById(ship.userId);
-        ship.user_details = u;
-        finalData.push(ship);
-    }
-    return { status: 'success', results: finalData.length, data: finalData };
+    const shipments = await Shipment.find({ userId: userId }).populate('userId', 'name email');
+    return { status: 'success', results: shipments.length, data: shipments };
 };
 
 const getShipmentById = async (id) => {
-    return await Shipment.findById(id);
+    return await Shipment.findById(id).populate('userId', 'name email');
 };
 
 const createShipment = async (data, userId) => {
@@ -29,7 +16,7 @@ const createShipment = async (data, userId) => {
         ...data,
         trackingId: trackId,
         userId: userId,
-        status: 'pending' // SMELL: [MEDIUM] Magic string 'pending'. Use constants.
+        status: 'pending' 
     });
     return await newShipment.save();
 };
@@ -39,7 +26,6 @@ const updateStatus = async (id, status) => {
 };
 
 const deleteShipment = async (id) => {
-    // SMELL: [HIGH] Missing authorization check. Any logged-in user can delete any shipment.
     return await Shipment.findByIdAndDelete(id);
 };
 

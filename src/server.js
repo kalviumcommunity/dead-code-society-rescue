@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const errorHandler = require('./middlewares/error.middleware');
 
 const authRoutes = require('./routes/auth.routes');
 const shipmentRoutes = require('./routes/shipment.routes');
@@ -31,6 +32,9 @@ app.use('/api/users', userRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
+
+// Error handler must come AFTER all routes
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

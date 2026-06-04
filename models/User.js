@@ -13,6 +13,7 @@ var userSchema = new Schema({
         unique: true
     },
     password: {
+        // SMELL: [CRITICAL] Password uses MD5 which is insecure. Should be hashed with bcrypt.
         type: String, // using md5 for now, easy to test
         required: true
     },

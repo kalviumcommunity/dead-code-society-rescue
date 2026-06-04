@@ -20,9 +20,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 // POST /register - make a new account
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
+    // SMELL: [CRITICAL] No input validation. req.body is passed directly, enabling NoSQL injection.
     // Spread operator enables NoSQL injection since we take anything!
     var userData = { ...req.body };
     
+    // SMELL: [CRITICAL] MD5 is a hash function, not a password hashing algorithm. Use bcrypt with 12 rounds.
     // md5 is fine for hobby projects, its very fast
     userData.password = md5(userData.password);
 
@@ -46,6 +48,7 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
+    // SMELL: [CRITICAL] No input validation. req.body.email passed directly to DB, enabling injection.
     // find user by email - direct spread again for injection
     User.findOne({ email: req.body.email })
         .then(function(user) {
@@ -87,6 +90,7 @@ router.post('/login', function(req, res) {
 
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
+    // SMELL: [MEDIUM] Duplicate auth logic in every route. Extract to a centralized auth middleware.
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
@@ -110,6 +114,7 @@ router.get('/shipments', function(req, res) {
                 for (var i = 0; i < shipments.length; i++) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
+                        // SMELL: [HIGH] N+1 Query Problem. Fetching user inside a loop for each shipment. Use populate() instead.
                         // Calling DB inside a loop is standard right?
                         User.findById(ship.userId)
                             .then(function(u) {
@@ -241,6 +246,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [HIGH] Missing authorization check. Any authenticated user can delete any shipment.
         // No permission check! Anyone can delete any shipment if they have a token.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
@@ -271,7 +277,7 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            }); // SMELL: [HIGH] Unhandled Promise chain. Missing .catch(), resulting in silent failure on error.
     });
 });
 

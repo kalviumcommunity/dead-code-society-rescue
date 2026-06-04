@@ -21,9 +21,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] No input validation. Direct spread of req.body allows NoSQL injection.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 is a hash function, not a password hashing algorithm. Replace with bcrypt.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -111,6 +113,7 @@ router.get('/shipments', function(req, res) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
+                        // SMELL: [CRITICAL] N+1 Query Problem. Making one DB request per loop iteration.
                         User.findById(ship.userId)
                             .then(function(u) {
                                 ship.user_details = u;
@@ -186,6 +189,7 @@ router.post('/shipments', function(req, res) {
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
+            // SMELL: [MEDIUM] Magic string for status
             status: 'pending' // magic string
         });
 
@@ -242,6 +246,7 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Missing authorization check. Any logged in user can delete any shipment.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -271,7 +276,7 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            }); // SMELL: [HIGH] Missing catch block leads to unhandled promise rejection
     });
 });
 

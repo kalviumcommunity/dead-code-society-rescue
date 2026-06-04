@@ -1,4 +1,5 @@
 require('dotenv').config();
+// SMELL: [MEDIUM] Using var causes function-scoped hoisting bugs. Use const/let.
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');

@@ -3,8 +3,10 @@ var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
+// SMELL: [CRITICAL] MD5 is not a password algorithm and is trivially crackable.
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [MEDIUM] Dead code/Unused imports clutters the workspace.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
@@ -21,9 +23,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] Spreading req.body directly creates a dangerous NoSQL injection vulnerability.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] Hashing passwords with MD5 exposes users to dictionary attacks.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -47,6 +51,7 @@ router.post('/register', function(req, res) {
 // POST /login - get a token
 router.post('/login', function(req, res) {
     // find user by email - direct spread again for injection
+    // SMELL: [HIGH] Sending req.body fields exactly as they are without schema validation. God file smell.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
@@ -88,6 +93,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate code for auth duplicated across routes. Use middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -107,6 +113,7 @@ router.get('/shipments', function(req, res) {
                     return res.json({ shipments: [] });
                 }
 
+                // SMELL: [HIGH] DB find inside loop leads to N+1 problem. Use populate instead.
                 for (var i = 0; i < shipments.length; i++) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
@@ -124,7 +131,8 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
-                            }); // silent failure if this fails
+                            }); // SMELL: [HIGH] Unhandled Promise catch block masking errors!
+                            // silent failure if this fails
                     })(i);
                 }
             })
@@ -138,6 +146,7 @@ router.get('/shipments', function(req, res) {
 // GET /shipments/:id - get one shipment
 router.get('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate code for auth duplicated across routes. Use middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -169,6 +178,7 @@ router.get('/shipments/:id', function(req, res) {
 // POST /shipments - create shipment
 router.post('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate code for auth duplicated across routes. Use middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -179,13 +189,15 @@ router.post('/shipments', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // generation of tracking id
-        var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
+        // SMELL: [MEDIUM] Variable 'var' used instead of modern 'const' / 'let'.
+    var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
         // Use spread to save time, mongoose will handle validation... maybe
         var newShipment = new Shipment({
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
+            // SMELL: [MEDIUM] Magic string usage. Should be defined as constant.
             status: 'pending' // magic string
         });
 
@@ -203,6 +215,7 @@ router.post('/shipments', function(req, res) {
 // PATCH /shipments/:id/status - change status
 router.patch('/shipments/:id/status', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate code for auth duplicated across routes. Use middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -232,6 +245,7 @@ router.patch('/shipments/:id/status', function(req, res) {
 // DELETE /shipments/:id - remove shipment
 router.delete('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate code for auth duplicated across routes. Use middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -259,6 +273,7 @@ router.delete('/shipments/:id', function(req, res) {
 // GET /profile - current user
 router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate code for auth duplicated across routes. Use middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     

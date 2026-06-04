@@ -1,9 +1,9 @@
-var authService = require('../services/authService');
-var { sendJson } = require('../utils/response');
+const authService = require('../services/authService');
+const { sendJson } = require('../utils/response');
 
 async function register(req, res, next) {
     try {
-        var user = await authService.registerUser(req.body);
+        const user = await authService.registerUser(req.body);
         return sendJson(res, 200, {
             success: true,
             message: 'Account created!',
@@ -16,7 +16,7 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
     try {
-        var result = await authService.loginUser(req.body);
+        const result = await authService.loginUser(req.body);
         return sendJson(res, 200, {
             msg: 'Login OK',
             token: result.token,

@@ -1,12 +1,12 @@
-var crypto = require('crypto');
+const crypto = require('crypto');
 
 function hashMd5(password) {
     return crypto.createHash('md5').update(String(password)).digest('hex');
 }
 
 function hashPassword(password) {
-    var salt = crypto.randomBytes(16).toString('hex');
-    var derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
+    const salt = crypto.randomBytes(16).toString('hex');
+    const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
 
     return salt + ':' + derived;
 }
@@ -20,15 +20,15 @@ function verifyPassword(password, storedPassword) {
         return hashMd5(password) === storedPassword;
     }
 
-    var parts = storedPassword.split(':');
+    const parts = storedPassword.split(':');
 
     if (parts.length !== 2) {
         return false;
     }
 
-    var salt = parts[0];
-    var expected = Buffer.from(parts[1], 'hex');
-    var actual = crypto.scryptSync(String(password), salt, expected.length).toString('hex');
+    const salt = parts[0];
+    const expected = Buffer.from(parts[1], 'hex');
+    const actual = crypto.scryptSync(String(password), salt, expected.length).toString('hex');
 
     return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), expected);
 }

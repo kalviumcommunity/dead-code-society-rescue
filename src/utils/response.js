@@ -7,7 +7,7 @@ function sendSuccess(res, data, statusCode) {
 }
 
 function sendError(res, statusCode, message, details) {
-    var payload = {
+    const payload = {
         error: message
     };
 

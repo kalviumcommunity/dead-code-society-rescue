@@ -1,6 +1,6 @@
 function errorHandler(err, req, res, next) {
-    var statusCode = err.status || 500;
-    var payload = {
+    const statusCode = err.status || 500;
+    const payload = {
         error: err.message || 'Internal Server Error'
     };
 

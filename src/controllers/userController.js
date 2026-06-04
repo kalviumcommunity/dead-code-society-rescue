@@ -1,9 +1,9 @@
-var userService = require('../services/userService');
-var { sendJson } = require('../utils/response');
+const userService = require('../services/userService');
+const { sendJson } = require('../utils/response');
 
 async function profile(req, res, next) {
     try {
-        var user = await userService.getProfile(req.user.id);
+        const user = await userService.getProfile(req.user.id);
         return sendJson(res, 200, user);
     } catch (error) {
         return next(error);

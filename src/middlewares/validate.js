@@ -1,8 +1,8 @@
-var allowedShipmentStatuses = ['pending', 'in-progress', 'delivered', 'cancelled'];
+const allowedShipmentStatuses = ['pending', 'in-progress', 'delivered', 'cancelled'];
 
 function requireFields(fields) {
     return function(req, res, next) {
-        var missing = fields.filter(function(field) {
+        const missing = fields.filter(function(field) {
             return req.body[field] === undefined || req.body[field] === null || req.body[field] === '';
         });
 

@@ -1,14 +1,14 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
 // routes
-var routes = require('./routes');
-var errorHandler = require('./middlewares/errorHandler');
+const routes = require('./routes');
+const errorHandler = require('./middlewares/errorHandler');
 
-var app = express();
+const app = express();
 
 // middleware setup
 app.use(cors());
@@ -16,31 +16,35 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
-var mongoUrl = process.env.DATABASE_URL;
+const mongoUrl = process.env.DATABASE_URL;
 if (!mongoUrl) {
     throw new Error('DATABASE_URL is required');
 }
 
-var PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-    app.listen(PORT, function() {
-        console.log('Server is alive on port ' + PORT);
-        console.log('Wait for MongoDB before testing...');
-    });
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
-    process.exit(1);
-});
+async function startServer() {
+    try {
+        await mongoose.connect(mongoUrl, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            useCreateIndex: true,
+            useFindAndModify: false
+        });
+
+        console.log('--- DATABASE CONNECTED ---');
+        app.listen(PORT, function() {
+            console.log('Server is alive on port ' + PORT);
+            console.log('Wait for MongoDB before testing...');
+        });
+    } catch (err) {
+        console.log('DATABASE CONNECTION ERROR:');
+        console.log(err);
+        process.exit(1);
+    }
+}
+
+startServer();
 
 // register routes
 app.use('/api', routes); // all routes under /api

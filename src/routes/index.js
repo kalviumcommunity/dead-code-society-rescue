@@ -1,13 +1,13 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-var authController = require('../controllers/authController');
-var shipmentController = require('../controllers/shipmentController');
-var systemController = require('../controllers/systemController');
-var userController = require('../controllers/userController');
+const authController = require('../controllers/authController');
+const shipmentController = require('../controllers/shipmentController');
+const systemController = require('../controllers/systemController');
+const userController = require('../controllers/userController');
 
-var auth = require('../middlewares/auth');
-var validate = require('../middlewares/validate');
+const auth = require('../middlewares/auth');
+const validate = require('../middlewares/validate');
 
 router.get('/', systemController.home);
 router.get('/status', systemController.status);

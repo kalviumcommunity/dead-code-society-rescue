@@ -1,8 +1,8 @@
-var Shipment = require('../models/Shipment');
-var { sanitizeUser } = require('./authService');
+const Shipment = require('../models/Shipment');
+const { sanitizeUser } = require('./authService');
 
 function createError(status, message) {
-    var error = new Error(message);
+    const error = new Error(message);
     error.status = status;
     return error;
 }
@@ -12,7 +12,7 @@ function canAccessShipment(shipment, user) {
 }
 
 function normalizeShipment(shipment) {
-    var record = shipment.toObject();
+    const record = shipment.toObject();
 
     if (record.userId && record.userId._id) {
         record.user_details = sanitizeUser(record.userId);
@@ -27,12 +27,12 @@ function buildTrackingId() {
 }
 
 async function listShipmentsForUser(user) {
-    var shipments = await Shipment.find({ userId: user.id }).populate('userId');
+    const shipments = await Shipment.find({ userId: user.id }).populate('userId');
     return shipments.map(normalizeShipment);
 }
 
 async function getShipmentById(id, user) {
-    var shipment = await Shipment.findById(id).populate('userId');
+    const shipment = await Shipment.findById(id).populate('userId');
 
     if (!shipment) {
         throw createError(404, 'Not found');
@@ -46,7 +46,7 @@ async function getShipmentById(id, user) {
 }
 
 async function createShipment(payload, user) {
-    var shipment = new Shipment({
+    const shipment = new Shipment({
         origin: payload.origin,
         destination: payload.destination,
         weight: payload.weight,
@@ -60,7 +60,7 @@ async function createShipment(payload, user) {
 }
 
 async function updateShipmentStatus(id, status, user) {
-    var shipment = await Shipment.findById(id);
+    const shipment = await Shipment.findById(id);
 
     if (!shipment) {
         throw createError(404, 'Not found');
@@ -79,7 +79,7 @@ async function updateShipmentStatus(id, status, user) {
 }
 
 async function deleteShipment(id, user) {
-    var shipment = await Shipment.findById(id);
+    const shipment = await Shipment.findById(id);
 
     if (!shipment) {
         throw createError(404, 'Not found');

@@ -1,4 +1,4 @@
-var os = require('os');
+const os = require('os');
 
 function home(req, res) {
     return res.json({ message: 'LogiTrack Backend running' });

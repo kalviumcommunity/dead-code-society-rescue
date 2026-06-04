@@ -1,4 +1,4 @@
-var tokenUtils = require('../utils/token');
+const tokenUtils = require('../utils/token');
 
 function extractToken(headerValue) {
     if (!headerValue) {
@@ -13,14 +13,14 @@ function extractToken(headerValue) {
 }
 
 function auth(req, res, next) {
-    var token = extractToken(req.headers.authorization);
+    const token = extractToken(req.headers.authorization);
 
     if (!token) {
         return res.status(401).json({ error: 'Unauthorized: missing token' });
     }
 
     try {
-        var decoded = tokenUtils.verifyToken(token);
+        const decoded = tokenUtils.verifyToken(token);
         req.user = {
             id: decoded.id,
             role: decoded.role

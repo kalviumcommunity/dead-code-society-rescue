@@ -1,9 +1,9 @@
-var User = require('../models/User');
-var { hashPassword, verifyPassword } = require('../utils/hash');
-var { signToken } = require('../utils/token');
+const User = require('../models/User');
+const { hashPassword, verifyPassword } = require('../utils/hash');
+const { signToken } = require('../utils/token');
 
 function createError(status, message) {
-    var error = new Error(message);
+    const error = new Error(message);
     error.status = status;
     return error;
 }
@@ -19,19 +19,19 @@ function sanitizeUser(user) {
 }
 
 async function registerUser(payload) {
-    var user = new User({
+    const user = new User({
         name: payload.name,
         email: payload.email,
         password: hashPassword(payload.password),
         role: 'user'
     });
 
-    var savedUser = await user.save();
+    const savedUser = await user.save();
     return sanitizeUser(savedUser);
 }
 
 async function loginUser(payload) {
-    var user = await User.findOne({ email: payload.email }).select('+password');
+    const user = await User.findOne({ email: payload.email }).select('+password');
 
     if (!user) {
         throw createError(404, 'No user found with that email');

@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 const registerUser = async (userData) => {
-    // SMELL: [CRITICAL] No input validation. Spread operator enables NoSQL injection.
     const data = { ...userData };
     // SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds.
     data.password = md5(data.password);
@@ -13,7 +12,6 @@ const registerUser = async (userData) => {
 };
 
 const loginUser = async (email, password) => {
-    // SMELL: [CRITICAL] No input validation on login. Direct object passing enables NoSQL injection.
     const user = await User.findOne({ email: email });
     if (!user) return { error: 'No user found with that email' };
     

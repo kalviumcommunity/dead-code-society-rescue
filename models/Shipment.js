@@ -16,7 +16,13 @@ var shipmentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        default: 'pending' // pending, in-progress, delivered, cancelled
+        enum: [
+            'pending',
+            'in-progress',
+            'delivered',
+            'cancelled'
+        ],
+        default: 'pending'
     },
     weight: {
         type: Number,

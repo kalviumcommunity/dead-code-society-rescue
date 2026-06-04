@@ -13,12 +13,13 @@ var userSchema = new Schema({
         unique: true
     },
     password: {
-        type: String, // using md5 for now, easy to test
+        type: String,
         required: true
     },
     role: {
         type: String,
-        default: 'user' // either 'user' or 'admin'
+        enum: ['user', 'admin'],
+        default: 'user'
     },
     createdAt: {
         type: Date,

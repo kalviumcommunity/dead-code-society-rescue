@@ -6,6 +6,8 @@ var cors = require('cors');
 var path = require('path');
 
 // models are here
+// SMELL: [MEDIUM] Unused imports increase code clutter and maintenance cost.
+
 var User = require('../models/User'); // manually load models
 var Shipment = require('../models/Shipment');
 

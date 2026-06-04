@@ -3,22 +3,16 @@ const User = require('../models/User');
 const { NotFoundError, ForbiddenError } = require('../utils/errors.util');
 
 const listShipments = async (userId) => {
-    const shipments = await Shipment.find({ userId: userId });
-    if (shipments.length === 0) {
-        return [];
-    }
-    const finalData = [];
-    for (let i = 0; i < shipments.length; i++) {
-        const ship = shipments[i].toObject();
-        try {
-            const u = await User.findById(ship.userId);
-            ship.user_details = u;
-            finalData.push(ship);
-        } catch (err) {
-            // SMELL: [MEDIUM] Database query inside loop has no error handler or catch block, causing silent failures on DB errors.
-        }
-    }
-    return finalData;
+    // Populate the userId field while excluding the password hash for security
+    const shipments = await Shipment.find({ userId: userId }).populate('userId', '-password');
+    
+    // Format the result to keep the same structure as the legacy response (user_details field)
+    return shipments.map(shipment => {
+        const ship = shipment.toObject();
+        ship.user_details = ship.userId;
+        ship.userId = ship.userId ? ship.userId._id : null;
+        return ship;
+    });
 };
 
 const getShipmentById = async (id, userId, userRole) => {

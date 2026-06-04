@@ -176,12 +176,15 @@ router.post('/shipments', function(req, res) {
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
-        // Use spread to save time, mongoose will handle validation... maybe
+        // Use explicit fields to avoid NoSQL injection
         var newShipment = new Shipment({
-            ...req.body,
+            origin: req.body.origin,
+            destination: req.body.destination,
+            weight: req.body.weight,
+            carrier: req.body.carrier,
             trackingId: trackId,
             userId: req.userId,
-            status: 'pending' // magic string
+            status: 'pending'
         });
 
         newShipment.save()
@@ -236,13 +239,27 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
-        Shipment.findByIdAndDelete(req.params.id)
-            .then(function() {
-                res.json({ message: 'Deleted ' + req.params.id });
+        // Find shipment first to check permissions
+        Shipment.findById(req.params.id)
+            .then(function(shipment) {
+                if (!shipment) {
+                    return res.json({ error: 'Shipment not found' });
+                }
+                
+                if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+                    return res.json({ error: 'No permission to delete this shipment' });
+                }
+                
+                Shipment.findByIdAndDelete(req.params.id)
+                    .then(function() {
+                        res.json({ message: 'Deleted ' + req.params.id });
+                    })
+                    .catch(function(e) {
+                        res.json({ error: 'Delete error' });
+                    });
             })
             .catch(function(e) {
-                res.json({ error: 'Delete error' });
+                res.json({ error: 'Error finding shipment' });
             });
     });
 });
@@ -265,8 +282,14 @@ router.get('/profile', function(req, res) {
 
         User.findById(req.userId)
             .then(function(user) {
+                if (!user) {
+                    return res.json({ error: 'User not found' });
+                }
                 res.json(user);
-            }); // missing catch
+            })
+            .catch(function(err) {
+                res.json({ error: 'Error finding profile' });
+            });
     });
 });
 

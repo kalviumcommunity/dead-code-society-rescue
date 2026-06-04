@@ -2,20 +2,19 @@ const Shipment = require('../models/Shipment');
 const User = require('../models/User');
 
 const getUserShipments = async (userId) => {
-    const shipments = await Shipment.find({ userId: userId });
-    const finalData = [];
+    const shipments = await Shipment.find({ userId: userId }).populate('userId', '-password');
     
     if (shipments.length === 0) {
         return { shipments: [] };
     }
-
-    for (let i = 0; i < shipments.length; i++) {
-        const ship = shipments[i].toObject();
-        // SMELL: [HIGH] N+1 Query Problem. Fetching user inside a loop for each shipment. Use populate() instead.
-        const u = await User.findById(ship.userId);
-        ship.user_details = u;
-        finalData.push(ship);
-    }
+    
+    // We map to add user_details to mimic previous API behavior for the client
+    const finalData = shipments.map(ship => {
+        const shipObj = ship.toObject();
+        shipObj.user_details = shipObj.userId;
+        shipObj.userId = shipObj.userId._id;
+        return shipObj;
+    });
     
     return {
         status: 'success',
@@ -25,11 +24,13 @@ const getUserShipments = async (userId) => {
 };
 
 const getShipmentById = async (id, userId, userRole) => {
-    const shipment = await Shipment.findById(id);
+    const shipment = await Shipment.findById(id).populate('userId', '-password');
     if (!shipment) {
         return { error: 'Not found' };
     }
-    if (shipment.userId.toString() !== userId && userRole !== 'admin') {
+    
+    const ownerId = shipment.userId._id ? shipment.userId._id.toString() : shipment.userId.toString();
+    if (ownerId !== userId && userRole !== 'admin') {
         return { error: 'No access to this shipment' };
     }
     return shipment;
@@ -56,7 +57,6 @@ const updateShipmentStatus = async (id, status, userRole) => {
 };
 
 const deleteShipment = async (id) => {
-    // SMELL: [HIGH] Missing authorization check. Any authenticated user can delete any shipment.
     return await Shipment.findByIdAndDelete(id);
 };
 

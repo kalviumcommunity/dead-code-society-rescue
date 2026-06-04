@@ -1,6 +1,7 @@
-var mongoose = require('mongoose');
+// SMELL: [MEDIUM] Using var instead of const/let. Use const for all non-reassigned variables.
+const mongoose = require('mongoose');
 
-var shipmentSchema = new mongoose.Schema({
+const shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,
         required: true,
@@ -16,7 +17,8 @@ var shipmentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        default: 'pending' // pending, in-progress, delivered, cancelled
+        default: 'pending',
+        enum: ['pending', 'in-progress', 'delivered', 'cancelled']
     },
     weight: {
         type: Number,
@@ -26,7 +28,6 @@ var shipmentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // which user this shipment belongs to
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

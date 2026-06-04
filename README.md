@@ -1,57 +1,151 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+REST API for shipment tracking built with Node.js, Express, MongoDB, JWT authentication, Joi validation, and bcrypt password hashing.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+---
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+## Tech Stack
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+| Layer            | Technology         |
+| ---------------- | ------------------ |
+| Runtime          | Node.js            |
+| Framework        | Express            |
+| Database         | MongoDB + Mongoose |
+| Authentication   | JWT                |
+| Validation       | Joi                |
+| Password Hashing | bcrypt             |
 
-### 1. Installation
-Clone the repo and install the dependencies:
+---
+
+## Installation
+
+### Clone Repository
+
+```bash
+git clone <repository-url>
+cd logitrack-backend
+```
+
+### Install Dependencies
+
 ```bash
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+### Create Environment File
+
+Create `.env`
+
+```env
+PORT=3000
+DATABASE_URL=mongodb://localhost:27017/logitrack
+JWT_SECRET=your-secret-key
+```
+
+### Run Development Server
+
 ```bash
 npm run dev
 ```
-Or start in production:
+
+### Run Production Server
+
 ```bash
 npm start
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+---
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+## Environment Variables
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+| Variable     | Required | Description                |
+| ------------ | -------- | -------------------------- |
+| PORT         | Yes      | Application port           |
+| DATABASE_URL | Yes      | MongoDB connection string  |
+| JWT_SECRET   | Yes      | Secret key for JWT signing |
 
 ---
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
 
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint           | Description                 |
+| ------ | ------------------ | --------------------------- |
+| POST   | /api/auth/register | Register a new user         |
+| POST   | /api/auth/login    | Login and receive JWT token |
+
+### Shipments
+
+| Method | Endpoint                  | Description            |
+| ------ | ------------------------- | ---------------------- |
+| GET    | /api/shipments            | Get all user shipments |
+| GET    | /api/shipments/:id        | Get shipment by ID     |
+| POST   | /api/shipments            | Create shipment        |
+| PATCH  | /api/shipments/:id/status | Update shipment status |
+| DELETE | /api/shipments/:id        | Delete shipment        |
+
+### Utility
+
+| Method | Endpoint    | Description   |
+| ------ | ----------- | ------------- |
+| GET    | /api/status | Health check  |
+| GET    | /api/ping   | Ping endpoint |
+
+---
+
+## Authentication
+
+Protected routes require JWT token:
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+## Project Structure
+
+```text
+src/
+├── controllers/
+├── services/
+├── routes/
+├── middlewares/
+├── validators/
+├── utils/
+├── models/
+├── app.js
+└── server.js
+```
+
+---
+
+## Architecture
+
+Request
+↓
+Routes
+↓
+Controllers
+↓
+Services
+↓
+Models
+↓
+MongoDB
+
+---
+
+## Improvements Implemented
+
+* Replaced MD5 with bcrypt
+* Added Joi validation
+* Added centralized error handling
+* Added authentication middleware
+* Converted promise chains to async/await
+* Fixed N+1 query problem using populate()
+* Implemented MVC architecture
+* Added JSDoc documentation
+* Added authorization checks
+* Removed unused imports and dead code

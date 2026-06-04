@@ -1,8 +1,8 @@
-var jwt = require('jsonwebtoken');
-var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 function authenticate(req, res, next) {
-    var token = req.headers['authorization'];
+    const token = req.headers['authorization'];
     if (!token) {
         return res.json({ error: 'Unauthorized: missing token' });
     }

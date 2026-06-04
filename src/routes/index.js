@@ -1,14 +1,14 @@
-var express = require('express');
-var router = express.Router();
-var os = require('os');
-var authRoutes = require('./auth.routes');
-var shipmentRoutes = require('./shipment.routes');
+const express = require('express');
+const router = express.Router();
+const os = require('os');
+const authRoutes = require('./auth.routes');
+const shipmentRoutes = require('./shipment.routes');
 
 router.use('/', authRoutes);
 router.use('/shipments', shipmentRoutes);
 
 router.get('/status', function(req, res) {
-    var info = {
+    const info = {
         os: os.type(),
         release: os.release(),
         uptime: process.uptime(),

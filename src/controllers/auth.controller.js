@@ -1,44 +1,45 @@
-var authService = require('../services/auth.service');
+const authService = require('../services/auth.service');
 
-function register(req, res) {
-    authService.register(req.body)
-        .then(function(user) {
-            res.json({
-                success: true,
-                message: 'Account created!',
-                user: user
-            });
-        })
-        .catch(function(err) {
-            console.log('Error in register: ' + err);
-            res.json({ success: false, error: 'Cannot register' });
+const register = async (req, res) => {
+    try {
+        const user = await authService.register(req.body);
+        res.json({
+            success: true,
+            message: 'Account created!',
+            user: user
         });
-}
+    } catch (err) {
+        console.log('Error in register: ' + err);
+        res.json({ success: false, error: 'Cannot register' });
+    }
+};
 
-function login(req, res) {
-    authService.login(req.body.email, req.body.password)
-        .then(function(result) {
-            res.json({
-                msg: 'Login OK',
-                token: result.token,
-                data: result.user
-            });
-        })
-        .catch(function(err) {
-            console.log('Login crash: ' + err);
-            res.json({ error: err.message || 'Server error' });
+const login = async (req, res) => {
+    try {
+        const result = await authService.login(req.body.email, req.body.password);
+        res.json({
+            msg: 'Login OK',
+            token: result.token,
+            data: result.user
         });
-}
+    } catch (err) {
+        console.log('Login crash: ' + err);
+        res.json({ error: err.message || 'Server error' });
+    }
+};
 
-function getProfile(req, res) {
-    authService.getProfile(req.userId)
-        .then(function(user) {
-            res.json(user);
-        });
-}
+const getProfile = async (req, res) => {
+    try {
+        const user = await authService.getProfile(req.userId);
+        res.json(user);
+    } catch (err) {
+        // SMELL: [HIGH] Missing promise catch block in profile retrieval route will cause unhandled promise rejection in case of database issues.
+        res.json({ error: 'Server error' });
+    }
+};
 
 module.exports = {
-    register: register,
-    login: login,
-    getProfile: getProfile
+    register,
+    login,
+    getProfile
 };

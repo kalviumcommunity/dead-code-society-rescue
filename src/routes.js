@@ -5,10 +5,7 @@ var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
-var path = require('path'); // unused import
-var fs = require('fs'); // unused import
-var http = require('http'); // unused import
-var os = require('os'); // unused import
+var os = require('os');
 
 // for auth
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';

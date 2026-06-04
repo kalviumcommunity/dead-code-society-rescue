@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth.routes');
 const shipmentRoutes = require('./routes/shipment.routes');
 const userRoutes = require('./routes/user.routes');
 const statusRoutes = require('./routes/status.routes');
+const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
@@ -38,6 +39,8 @@ app.use('/api', statusRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

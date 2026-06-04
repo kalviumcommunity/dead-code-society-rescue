@@ -61,7 +61,7 @@ const createShipment = async (req, res, next) => {
  */
 const updateStatus = async (req, res, next) => {
   try {
-    const updatedShipment = await shipmentService.updateShipmentStatus(req.params.id, req.body.status, req.userRole);
+    const updatedShipment = await shipmentService.updateShipmentStatus(req.params.id, req.body.status, req.userId, req.userRole);
     res.json(updatedShipment);
   } catch (err) {
     next(err);

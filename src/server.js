@@ -1,0 +1,44 @@
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const errorHandler = require('./middlewares/error.middleware');
+
+const authRoutes = require('./routes/auth.routes');
+const shipmentRoutes = require('./routes/shipment.routes');
+const userRoutes = require('./routes/user.routes');
+
+const app = express();
+
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+mongoose.connect(mongoUrl, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false
+})
+.then(() => { console.log('--- DATABASE CONNECTED ---'); })
+.catch((err) => { console.log('DATABASE CONNECTION ERROR:'); console.log(err); });
+
+app.use('/api/auth', authRoutes);
+app.use('/api/shipments', shipmentRoutes);
+app.use('/api/users', userRoutes);
+
+app.get('/', (req, res) => {
+    res.json({ message: 'LogiTrack Backend running' });
+});
+
+// Error handler must come AFTER all routes
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log('Server is alive on port ' + PORT);
+});
+
+module.exports = app;

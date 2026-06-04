@@ -1,4 +1,5 @@
 require('dotenv').config();
+// SMELL: [MEDIUM] Using var causes function-scoped hoisting bugs. Use const/let.
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
@@ -10,7 +11,9 @@ var User = require('../models/User'); // manually load models
 var Shipment = require('../models/Shipment');
 
 // routes
-var routes = require('./routes');
+var authRoutes = require('./routes/auth.routes');
+var userRoutes = require('./routes/user.routes');
+var shipmentRoutes = require('./routes/shipment.routes');
 
 var app = express();
 
@@ -36,7 +39,9 @@ mongoose.connect(mongoUrl, {
 });
 
 // register routes
-app.use('/api', routes); // all routes under /api
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/shipments', shipmentRoutes);
 
 // welcome route
 app.get('/', function(req, res) {

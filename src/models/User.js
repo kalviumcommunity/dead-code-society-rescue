@@ -1,8 +1,8 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-var userSchema = new Schema({
+const userSchema = new Schema({
     name: {
         type: String,
         required: true
@@ -13,12 +13,13 @@ var userSchema = new Schema({
         unique: true
     },
     password: {
-        type: String, // using md5 for now, easy to test
+        // SMELL: [HIGH] User model schema lacks basic validation on email formatting and password strength.
+        type: String,
         required: true
     },
     role: {
         type: String,
-        default: 'user' // either 'user' or 'admin'
+        default: 'user'
     },
     createdAt: {
         type: Date,

@@ -4,7 +4,6 @@ const md5 = require('md5');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 const register = async (userData) => {
-    // SMELL: [CRITICAL] No input validation. req.body is passed directly, enabling NoSQL injection.
     const data = { ...userData };
     
     // SMELL: [CRITICAL] MD5 is a hash function, not a password hashing algorithm. Use bcrypt with 12 rounds.

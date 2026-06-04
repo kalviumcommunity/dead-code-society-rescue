@@ -17,7 +17,6 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        // SMELL: [CRITICAL] No input validation. req.body.email passed directly to DB, enabling injection.
         const result = await authService.login(req.body.email, req.body.password);
         if (result.error) {
             res.json({ error: result.error });

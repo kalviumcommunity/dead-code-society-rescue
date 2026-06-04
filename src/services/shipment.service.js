@@ -1,57 +1,46 @@
-var Shipment = require('../models/Shipment');
-var User = require('../models/User');
+const Shipment = require('../models/Shipment');
+const User = require('../models/User');
 
-function getShipments(userId) {
-    return Shipment.find({ userId: userId })
-        .then(function(shipments) {
-            if (shipments.length === 0) {
-                return [];
-            }
-            return new Promise(function(resolve, reject) {
-                var finalData = [];
-                var itemsProcessed = 0;
-                for (var i = 0; i < shipments.length; i++) {
-                    (function(idx) {
-                        var ship = shipments[idx].toObject();
-                        User.findById(ship.userId)
-                            .then(function(u) {
-                                ship.user_details = u;
-                                finalData.push(ship);
-                                itemsProcessed++;
-                                if (itemsProcessed === shipments.length) {
-                                    resolve(finalData);
-                                }
-                            })
-                            .catch(function(err) {
-                                // Silent failure as per the original code
-                            });
-                    })(i);
-                }
-            });
-        });
+async function getShipments(userId) {
+    const shipments = await Shipment.find({ userId: userId });
+    if (shipments.length === 0) {
+        return [];
+    }
+    const finalData = [];
+    for (let i = 0; i < shipments.length; i++) {
+        const ship = shipments[i].toObject();
+        try {
+            const u = await User.findById(ship.userId);
+            ship.user_details = u;
+            finalData.push(ship);
+        } catch (err) {
+            // Silent failure as per the original code
+        }
+    }
+    return finalData;
 }
 
-function getShipmentById(id) {
-    return Shipment.findById(id);
+async function getShipmentById(id) {
+    return await Shipment.findById(id);
 }
 
-function createShipment(shipmentData, userId) {
-    var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
-    var newShipment = new Shipment({
+async function createShipment(shipmentData, userId) {
+    const trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
+    const newShipment = new Shipment({
         ...shipmentData,
         trackingId: trackId,
         userId: userId,
         status: 'pending'
     });
-    return newShipment.save();
+    return await newShipment.save();
 }
 
-function updateShipmentStatus(id, status) {
-    return Shipment.findByIdAndUpdate(id, { status: status }, { new: true });
+async function updateShipmentStatus(id, status) {
+    return await Shipment.findByIdAndUpdate(id, { status }, { new: true });
 }
 
-function deleteShipment(id) {
-    return Shipment.findByIdAndDelete(id);
+async function deleteShipment(id) {
+    return await Shipment.findByIdAndDelete(id);
 }
 
 module.exports = {

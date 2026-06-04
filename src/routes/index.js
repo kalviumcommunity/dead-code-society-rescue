@@ -1,9 +1,9 @@
-var express = require('express');
-var router = express.Router();
-var authController = require('../controllers/auth.controller');
-var shipmentController = require('../controllers/shipment.controller');
-var authMiddleware = require('../middlewares/auth.middleware');
-var os = require('os');
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/auth.controller');
+const shipmentController = require('../controllers/shipment.controller');
+const authMiddleware = require('../middlewares/auth.middleware');
+const os = require('os');
 
 // Auth routes
 router.post('/register', authController.register);
@@ -18,8 +18,8 @@ router.patch('/shipments/:id/status', authMiddleware.protect, shipmentController
 router.delete('/shipments/:id', authMiddleware.protect, shipmentController.deleteShipment);
 
 // System routes
-router.get('/status', function(req, res) {
-    var info = {
+router.get('/status', (req, res) => {
+    const info = {
         os: os.type(),
         release: os.release(),
         uptime: process.uptime(),
@@ -28,7 +28,7 @@ router.get('/status', function(req, res) {
     res.json(info);
 });
 
-router.get('/ping', function(req, res) {
+router.get('/ping', (req, res) => {
     res.json({ pong: 'active' });
 });
 

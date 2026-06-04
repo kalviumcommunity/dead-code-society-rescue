@@ -1,18 +1,18 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const path = require('path');
 
 // models are here
-var User = require('./models/User'); // manually load models
-var Shipment = require('./models/Shipment');
+const User = require('./models/User'); // manually load models
+const Shipment = require('./models/Shipment');
 
 // routes
-var routes = require('./routes');
+const routes = require('./routes');
 
-var app = express();
+const app = express();
 
 // middleware setup
 app.use(cors());
@@ -20,8 +20,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-var isLocalhost = mongoUrl.indexOf('localhost:27017') !== -1 || mongoUrl.indexOf('127.0.0.1:27017') !== -1;
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+const isLocalhost = mongoUrl.indexOf('localhost:27017') !== -1 || mongoUrl.indexOf('127.0.0.1:27017') !== -1;
 
 function connectDb(url) {
     return mongoose.connect(url, {
@@ -33,37 +33,36 @@ function connectDb(url) {
     });
 }
 
-if (isLocalhost) {
-    connectDb(mongoUrl)
-        .then(function() {
+async function initDb() {
+    if (isLocalhost) {
+        try {
+            await connectDb(mongoUrl);
             console.log('--- DATABASE CONNECTED (Local MongoDB) ---');
-        })
-        .catch(function(err) {
+        } catch (err) {
             console.log('Local MongoDB not running. Starting MongoMemoryServer...');
-            var MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
-            MongoMemoryServer.create()
-                .then(function(mongoServer) {
-                    var inMemoryUri = mongoServer.getUri();
-                    return connectDb(inMemoryUri)
-                        .then(function() {
-                            console.log('--- DATABASE CONNECTED (MongoMemoryServer) --- ' + inMemoryUri);
-                        });
-                })
-                .catch(function(e) {
-                    console.log('DATABASE CONNECTION ERROR:');
-                    console.log(e);
-                });
-        });
-} else {
-    connectDb(mongoUrl)
-        .then(function() {
+            try {
+                const { MongoMemoryServer } = require('mongodb-memory-server');
+                const mongoServer = await MongoMemoryServer.create();
+                const inMemoryUri = mongoServer.getUri();
+                await connectDb(inMemoryUri);
+                console.log('--- DATABASE CONNECTED (MongoMemoryServer) --- ' + inMemoryUri);
+            } catch (e) {
+                console.log('DATABASE CONNECTION ERROR:');
+                console.log(e);
+            }
+        }
+    } else {
+        try {
+            await connectDb(mongoUrl);
             console.log('--- DATABASE CONNECTED ---');
-        })
-        .catch(function(err) {
+        } catch (err) {
             console.log('DATABASE CONNECTION ERROR:');
             console.log(err);
-        });
+        }
+    }
 }
+
+initDb();
 
 // register routes
 app.use('/api', routes); // all routes under /api
@@ -76,7 +75,7 @@ app.get('/', function(req, res) {
 // no 404 handler here, let express handle it for now
 
 // start server
-var PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, function() {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');

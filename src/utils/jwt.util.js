@@ -1,13 +1,13 @@
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
-var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 function signToken(payload) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '12h' });
 }
 
-function verifyToken(token, callback) {
-    return jwt.verify(token, JWT_SECRET, callback);
+function verifyToken(token) {
+    return jwt.verify(token, JWT_SECRET);
 }
 
 module.exports = {

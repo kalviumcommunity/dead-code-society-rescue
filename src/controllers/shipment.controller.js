@@ -44,10 +44,10 @@ const updateShipmentStatus = async (req, res) => {
 
 const deleteShipment = async (req, res) => {
     try {
-        await shipmentService.deleteShipment(req.params.id);
+        await shipmentService.deleteShipment(req.params.id, req.userId, req.userRole);
         res.json({ message: 'Deleted ' + req.params.id });
     } catch (e) {
-        res.json({ error: 'Delete error' });
+        res.json({ error: e.message || 'Delete error' });
     }
 };
 

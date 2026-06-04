@@ -51,7 +51,14 @@ const updateShipmentStatus = async (id, status, userId, userRole) => {
     return await Shipment.findByIdAndUpdate(id, { status: status }, { new: true });
 };
 
-const deleteShipment = async (id) => {
+const deleteShipment = async (id, userId, userRole) => {
+    const shipment = await Shipment.findById(id);
+    if (!shipment) {
+        throw new Error('Not found');
+    }
+    if (shipment.userId.toString() !== userId && userRole !== 'admin') {
+        throw new Error('No access to this shipment');
+    }
     return await Shipment.findByIdAndDelete(id);
 };
 

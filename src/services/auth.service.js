@@ -1,12 +1,13 @@
 const User = require('../models/User');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 const register = async (userData) => {
     const data = { ...userData };
-    data.password = md5(data.password);
+    // Hash password using bcrypt with 12 rounds
+    data.password = await bcrypt.hash(data.password, 12);
     const newUser = new User(data);
     return await newUser.save();
 };
@@ -16,9 +17,13 @@ const login = async (email, password) => {
     if (!user) {
         throw new Error('No user found with that email');
     }
-    if (user.password !== md5(password)) {
+    
+    // Compare passwords using bcrypt.compare
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
         throw new Error('Password does not match');
     }
+    
     const token = jwt.sign(
         { id: user._id, role: user.role },
         JWT_SECRET,

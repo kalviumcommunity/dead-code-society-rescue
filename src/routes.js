@@ -3,7 +3,8 @@ var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
-var md5 = require('md5'); // md5 hashing
+var bcrypt = require('bcrypt'); // bcrypt hashing
+var Joi = require('joi'); // input validation
 var mongoose = require('mongoose'); // for id checking
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
@@ -18,62 +19,74 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 // ---------------------------------------------------------
 
 // POST /register - make a new account
-router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
-    var userData = { ...req.body };
-    
-    // md5 is fine for hobby projects, its very fast
-    userData.password = md5(userData.password);
+router.post('/register', async function(req, res) {
+    // validation schema
+    const registerSchema = Joi.object({
+        name: Joi.string().required(),
+        email: Joi.string().email().required(),
+        password: Joi.string().min(6).required()
+    });
 
-    var newUser = new User(userData);
-    
-    newUser.save()
-        .then(function(user) {
-            console.log('Registered user: ' + user.email);
-            // using 200 for everything, its simpler for my frontend dev
-            res.json({
-                success: true,
-                message: 'Account created!',
-                user: user
-            });
-        })
-        .catch(function(err) {
-            console.log('Error in register: ' + err);
-            res.json({ success: false, error: 'Cannot register' });
-        });
+    const { error } = registerSchema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    try {
+        // Only accept specific fields — never take role from user input
+        const userData = {
+            name: req.body.name,
+            email: req.body.email,
+            password: await bcrypt.hash(req.body.password, 12)
+        };
+
+        const newUser = new User(userData);
+        const user = await newUser.save();
+        console.log('Registered user: ' + user.email);
+
+        const out = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt
+        };
+
+        res.json({ success: true, message: 'Account created!', user: out });
+    } catch (err) {
+        console.log('Error in register: ' + err);
+        res.status(500).json({ success: false, error: 'Cannot register' });
+    }
 });
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
+    // find user by email
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
                 return res.json({ error: 'No user found with that email' });
             }
 
-            // check md5 password
-            if (user.password === md5(req.body.password)) {
-                // sign jwt
-                var token = jwt.sign(
-                    { id: user._id, role: user.role }, 
-                    JWT_SECRET, 
-                    { expiresIn: '12h' }
-                );
+            // compare password with bcrypt
+            bcrypt.compare(req.body.password, user.password)
+                .then(function(valid) {
+                    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-                res.json({
-                    msg: 'Login OK',
-                    token: token,
-                    data: {
-                        name: user.name,
-                        email: user.email,
-                        role: user.role
-                    }
+                    var token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
+
+                    res.json({
+                        msg: 'Login OK',
+                        token: token,
+                        data: {
+                            name: user.name,
+                            email: user.email,
+                            role: user.role
+                        }
+                    });
+                })
+                .catch(function(e) {
+                    console.log('Error comparing passwords: ' + e);
+                    res.status(500).json({ error: 'Server error' });
                 });
-            } else {
-                res.json({ error: 'Password does not match' });
-            }
         })
         .catch(function(err) {
             console.log('Login crash: ' + err);
@@ -97,40 +110,15 @@ router.get('/shipments', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // Use populate to avoid N+1 queries: single DB call fetches user info
         Shipment.find({ userId: req.userId })
+            .populate('userId', 'name email')
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
-                var finalData = [];
-                var itemsProcessed = 0;
-
-                if (shipments.length === 0) {
-                    return res.json({ shipments: [] });
-                }
-
-                for (var i = 0; i < shipments.length; i++) {
-                    (function(idx) {
-                        var ship = shipments[idx].toObject();
-                        // Calling DB inside a loop is standard right?
-                        User.findById(ship.userId)
-                            .then(function(u) {
-                                ship.user_details = u;
-                                finalData.push(ship);
-                                itemsProcessed++;
-
-                                if (itemsProcessed === shipments.length) {
-                                    res.json({
-                                        status: 'success',
-                                        results: finalData.length,
-                                        data: finalData
-                                    });
-                                }
-                            }); // silent failure if this fails
-                    })(i);
-                }
+                res.json({ status: 'success', results: shipments.length, data: shipments });
             })
             .catch(function(err) {
                 console.log(err);
-                res.json({ error: 'Fetch failed' });
+                res.status(500).json({ error: 'Fetch failed' });
             });
     });
 });
@@ -180,22 +168,27 @@ router.post('/shipments', function(req, res) {
 
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
-        
-        // Use spread to save time, mongoose will handle validation... maybe
-        var newShipment = new Shipment({
-            ...req.body,
+
+        // Only accept permitted fields from the request body
+        var shipmentData = {
+            origin: req.body.origin,
+            destination: req.body.destination,
+            weight: req.body.weight,
+            carrier: req.body.carrier,
             trackingId: trackId,
             userId: req.userId,
-            status: 'pending' // magic string
-        });
+            status: 'pending'
+        };
+
+        var newShipment = new Shipment(shipmentData);
 
         newShipment.save()
             .then(function(saved) {
                 res.json(saved);
             })
             .catch(function(err) {
-                console.log('Error saving shipment');
-                res.json({ error: err });
+                console.log('Error saving shipment', err);
+                res.status(400).json({ error: 'Invalid shipment data' });
             });
     });
 });
@@ -212,19 +205,30 @@ router.patch('/shipments/:id/status', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // logic: only admins can mark as delivered
-        if (req.body.status === 'delivered') { // magic string comparison
-            if (req.userRole !== 'admin') {
-                return res.json({ error: 'Admins only can deliver' });
-            }
-        }
+        // fetch shipment first to verify ownership / permissions
+        Shipment.findById(req.params.id)
+            .then(function(shipment) {
+                if (!shipment) return res.status(404).json({ error: 'Not found' });
 
-        Shipment.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true })
-            .then(function(doc) {
-                res.json(doc);
+                // only owner or admin can update
+                if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+                    return res.status(403).json({ error: 'Forbidden' });
+                }
+
+                // only admins can mark as delivered
+                if (req.body.status === 'delivered' && req.userRole !== 'admin') {
+                    return res.status(403).json({ error: 'Admins only can deliver' });
+                }
+
+                shipment.status = req.body.status;
+                return shipment.save();
+            })
+            .then(function(updated) {
+                if (updated) res.json(updated);
             })
             .catch(function(err) {
-                res.json({ error: 'Update failed' });
+                console.log('Status update failed', err);
+                res.status(400).json({ error: 'Update failed' });
             });
     });
 });
@@ -241,13 +245,21 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
-        Shipment.findByIdAndDelete(req.params.id)
-            .then(function() {
+        // enforce authorization: only owner or admin can delete
+        Shipment.findById(req.params.id)
+            .then(async function(shipment) {
+                if (!shipment) return res.status(404).json({ error: 'Not found' });
+
+                if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+                    return res.status(403).json({ error: 'Forbidden' });
+                }
+
+                await shipment.deleteOne();
                 res.json({ message: 'Deleted ' + req.params.id });
             })
             .catch(function(e) {
-                res.json({ error: 'Delete error' });
+                console.log('Delete error', e);
+                res.status(400).json({ error: 'Delete error' });
             });
     });
 });
@@ -268,12 +280,18 @@ router.get('/profile', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        User.findById(req.userId)
+        User.findById(req.userId).select('name email role createdAt')
             .then(function(user) {
+                if (!user) return res.status(404).json({ error: 'Not found' });
                 res.json(user);
-            }); // missing catch
+            })
+            .catch(function(e) {
+                res.status(500).json({ error: 'Server error' });
+            });
     });
 });
+
+
 
 /*
 // OLD CODE - DO NOT DELETE

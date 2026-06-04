@@ -27,7 +27,7 @@ const getShipmentById = async (shipmentId, userId, userRole) => {
     throw new NotFoundError('Shipment not found');
   }
 
-  if (shipment.userId._id.toString() !== userId && userRole !== 'admin') {
+  if (!shipment.userId || (shipment.userId._id.toString() !== userId && userRole !== 'admin')) {
     throw new UnauthorizedError('No access to this shipment');
   }
 

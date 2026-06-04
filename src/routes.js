@@ -11,6 +11,9 @@ var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [CRITICAL] Falling back to a hardcoded JWT secret makes tokens predictable if the environment variable is missing.
+// This turns authentication into a configuration accident instead of a security boundary.
+
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -21,9 +24,15 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+
+    // SMELL: [CRITICAL] Spreading req.body directly into the User document allows mass assignment of fields like role.
+    // A client can supply privileged properties that should never be user-controlled.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 is not a password hashing algorithm and offers no practical resistance to cracking.
+    // Passwords should be hashed with a slow, salted algorithm such as bcrypt or argon2.
+
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -54,6 +63,9 @@ router.post('/login', function(req, res) {
             }
 
             // check md5 password
+            // SMELL: [CRITICAL] Comparing passwords with MD5 keeps login credentials in a trivially reversible format.
+            // Authentication should verify a slow password hash rather than a fast checksum.
+
             if (user.password === md5(req.body.password)) {
                 // sign jwt
                 var token = jwt.sign(
@@ -111,6 +123,9 @@ router.get('/shipments', function(req, res) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
+                        // SMELL: [MEDIUM] Fetching the same user document inside a shipment loop creates an N+1 query pattern.
+                        // This scales poorly and adds unnecessary database round-trips for every shipment returned.
+
                         User.findById(ship.userId)
                             .then(function(u) {
                                 ship.user_details = u;
@@ -219,6 +234,9 @@ router.patch('/shipments/:id/status', function(req, res) {
             }
         }
 
+        // SMELL: [HIGH] This update accepts any status string without validating the transition or enforcing ownership.
+        // It also bypasses the pre-save timestamp hook, so updatedAt can silently stop reflecting changes.
+
         Shipment.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true })
             .then(function(doc) {
                 res.json(doc);
@@ -242,6 +260,9 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Deleting by id without checking ownership or an admin role lets any authenticated user remove arbitrary shipments.
+        // Authorization here should be tied to the resource owner or a narrowly scoped admin policy.
+
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -267,6 +288,9 @@ router.get('/profile', function(req, res) {
         req.userId = decoded.id;
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
+
+        // SMELL: [MEDIUM] This lookup has no catch handler, so a database error can leave the request hanging without a response.
+        // Silent failures make operational debugging and client retries much harder.
 
         User.findById(req.userId)
             .then(function(user) {

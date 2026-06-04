@@ -6,7 +6,7 @@ const shipmentController = require('../controllers/shipmentController');
 const systemController = require('../controllers/systemController');
 const userController = require('../controllers/userController');
 
-const auth = require('../middlewares/auth');
+const auth = require('../middlewares/auth.middleware');
 const { validateBody } = require('../middlewares/validate');
 const registerSchema = require('../validators/register');
 const loginSchema = require('../validators/login');

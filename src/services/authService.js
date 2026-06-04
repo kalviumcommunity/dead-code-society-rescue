@@ -19,10 +19,12 @@ function sanitizeUser(user) {
 }
 
 async function registerUser(payload) {
+    const passwordHash = await hashPassword(payload.password);
+
     const user = new User({
         name: payload.name,
         email: payload.email,
-        password: hashPassword(payload.password),
+        password: passwordHash,
         role: 'user'
     });
 
@@ -37,8 +39,10 @@ async function loginUser(payload) {
         throw createError(404, 'No user found with that email');
     }
 
-    if (!verifyPassword(payload.password, user.password)) {
-        throw createError(401, 'Password does not match');
+    const isValid = await verifyPassword(payload.password, user.password);
+
+    if (!isValid) {
+        throw createError(401, 'Invalid credentials');
     }
 
     return {

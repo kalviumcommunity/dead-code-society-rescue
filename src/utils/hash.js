@@ -1,36 +1,15 @@
-const crypto = require('crypto');
-
-function hashMd5(password) {
-    return crypto.createHash('md5').update(String(password)).digest('hex');
-}
+const bcrypt = require('bcrypt');
 
 function hashPassword(password) {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
-
-    return salt + ':' + derived;
+    return bcrypt.hash(String(password), 12);
 }
 
-function verifyPassword(password, storedPassword) {
+async function verifyPassword(password, storedPassword) {
     if (!storedPassword) {
         return false;
     }
 
-    if (storedPassword.indexOf(':') === -1) {
-        return hashMd5(password) === storedPassword;
-    }
-
-    const parts = storedPassword.split(':');
-
-    if (parts.length !== 2) {
-        return false;
-    }
-
-    const salt = parts[0];
-    const expected = Buffer.from(parts[1], 'hex');
-    const actual = crypto.scryptSync(String(password), salt, expected.length).toString('hex');
-
-    return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), expected);
+    return bcrypt.compare(String(password), storedPassword);
 }
 
 module.exports = {

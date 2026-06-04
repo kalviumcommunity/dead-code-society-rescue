@@ -3,22 +3,16 @@ const User = require('../models/User');
 const { NotFoundError } = require('../utils/errors.util');
 
 async function getShipments(userId) {
-    const shipments = await Shipment.find({ userId: userId });
-    if (shipments.length === 0) {
-        return [];
-    }
-    const finalData = [];
-    for (let i = 0; i < shipments.length; i++) {
-        const ship = shipments[i].toObject();
-        try {
-            const u = await User.findById(ship.userId);
-            ship.user_details = u;
-            finalData.push(ship);
-        } catch (err) {
-            // Silent failure as per the original code
+    // Fix N+1 queries by using populate
+    const shipments = await Shipment.find({ userId: userId }).populate('userId');
+    return shipments.map(s => {
+        const ship = s.toObject();
+        ship.user_details = ship.userId;
+        if (ship.userId) {
+            ship.userId = ship.userId._id;
         }
-    }
-    return finalData;
+        return ship;
+    });
 }
 
 async function getShipmentById(id) {

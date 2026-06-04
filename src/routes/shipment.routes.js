@@ -1,6 +1,6 @@
-var express = require('express');
-var router = express.Router();
-var shipmentController = require('../controllers/shipment.controller');
+const express = require('express');
+const router = express.Router();
+const shipmentController = require('../controllers/shipment.controller');
 
 router.get('/', shipmentController.getShipments);
 router.get('/:id', shipmentController.getShipmentById);

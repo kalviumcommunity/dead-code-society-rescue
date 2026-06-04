@@ -3,6 +3,15 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
+/**
+ * Registers a new user.
+ * 
+ * @param {Object} userData - Data for the new user
+ * @param {string} userData.name - User's name
+ * @param {string} userData.email - User's email
+ * @param {string} userData.password - User's plaintext password
+ * @returns {Promise<Object>} The created user document
+ */
 const register = async (userData) => {
     const data = { ...userData };
     const saltRounds = 12;
@@ -11,6 +20,13 @@ const register = async (userData) => {
     return await newUser.save();
 };
 
+/**
+ * Authenticates a user and returns a signed JWT.
+ * 
+ * @param {string} email - User's email address
+ * @param {string} password - Plaintext password to verify
+ * @returns {Promise<{msg?: string, token?: string, data?: Object, error?: string}>} Authenticated user data and JWT or an error object
+ */
 const login = async (email, password) => {
     const user = await User.findOne({ email: email });
     if (!user) {

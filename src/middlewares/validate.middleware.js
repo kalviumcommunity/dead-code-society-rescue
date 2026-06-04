@@ -1,3 +1,9 @@
+/**
+ * Creates a validation middleware for a given Joi schema.
+ * 
+ * @param {import('joi').Schema} schema - Joi schema to validate against
+ * @returns {import('express').RequestHandler} Express middleware function
+ */
 const validate = (schema) => (req, res, next) => {
     const { error, value } = schema.validate(req.body, {
         abortEarly: false,

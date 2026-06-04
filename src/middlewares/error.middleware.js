@@ -1,5 +1,14 @@
 const { AppError } = require('../utils/errors.util');
 
+/**
+ * Central Express error handling middleware.
+ * Must have exactly 4 parameters to be recognized by Express.
+ *
+ * @param {Error} err - The error object
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ */
 const errorHandler = (err, req, res, next) => {
     console.error(`[${new Date().toISOString()}] ${err.name}: ${err.message}`);
 

@@ -1,5 +1,13 @@
 const shipmentService = require('../services/shipment.service');
 
+/**
+ * Handles fetching all shipments for the authenticated user.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {Promise<void>}
+ */
 const getUserShipments = async (req, res, next) => {
     try {
         const result = await shipmentService.getUserShipments(req.userId);
@@ -9,6 +17,14 @@ const getUserShipments = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles fetching a single shipment by ID.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {Promise<void>}
+ */
 const getShipmentById = async (req, res, next) => {
     try {
         const result = await shipmentService.getShipmentById(req.params.id, req.userId, req.userRole);
@@ -19,6 +35,14 @@ const getShipmentById = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles creating a new shipment.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {Promise<void>}
+ */
 const createShipment = async (req, res, next) => {
     try {
         const saved = await shipmentService.createShipment(req.body, req.userId);
@@ -28,6 +52,14 @@ const createShipment = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles updating a shipment's status.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {Promise<void>}
+ */
 const updateShipmentStatus = async (req, res, next) => {
     try {
         const doc = await shipmentService.updateShipmentStatus(req.params.id, req.body.status, req.userRole);
@@ -38,6 +70,14 @@ const updateShipmentStatus = async (req, res, next) => {
     }
 };
 
+/**
+ * Handles deleting a shipment.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {Promise<void>}
+ */
 const deleteShipment = async (req, res, next) => {
     try {
         await shipmentService.deleteShipment(req.params.id);

@@ -1,57 +1,101 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack API
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+## Overview
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+LogiTrack is a backend API for managing users and shipments. It provides registration and login, shipment creation and tracking, role-aware status updates, and basic health endpoints.
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+## Tech Stack
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+| Category     | Choice             |
+| ------------ | ------------------ |
+| Runtime      | Node.js            |
+| Framework    | Express            |
+| Database     | MongoDB            |
+| ODM          | Mongoose           |
+| Auth         | JWT (jsonwebtoken) |
+| Validation   | Joi                |
+| Hashing      | bcrypt             |
+| Config       | dotenv             |
+| HTTP Helpers | body-parser, cors  |
+| Dev Tools    | nodemon            |
 
-### 1. Installation
-Clone the repo and install the dependencies:
+## Quick Start
+
+1. Install dependencies
+
 ```bash
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+2. Configure environment
+
+```bash
+copy .env.example .env
+```
+
+3. Start the server
+
 ```bash
 npm run dev
 ```
-Or start in production:
-```bash
-npm start
+
+The API listens on `http://localhost:3000` by default.
+
+## Environment Variables
+
+| Name         | Example                                | Required | Description                   |
+| ------------ | -------------------------------------- | -------- | ----------------------------- |
+| PORT         | 3000                                   | No       | Port for the HTTP server      |
+| DATABASE_URL | mongodb://localhost:27017/logitrack    | Yes      | MongoDB connection string     |
+| JWT_SECRET   | super_secret_logitrack_2019_dont_share | Yes      | Signing secret for JWT tokens |
+
+## API Reference
+
+All endpoints are under the `/api` prefix.
+
+| Method | Endpoint              | Auth Required | Description                                  |
+| ------ | --------------------- | ------------- | -------------------------------------------- |
+| POST   | /register             | No            | Create a new user account                    |
+| POST   | /login                | No            | Authenticate and receive a JWT               |
+| GET    | /shipments            | Yes           | List shipments for the current user          |
+| GET    | /shipments/:id        | Yes           | Fetch a specific shipment by id              |
+| POST   | /shipments            | Yes           | Create a shipment                            |
+| PATCH  | /shipments/:id/status | Yes           | Update a shipment status (admin can deliver) |
+| DELETE | /shipments/:id        | Yes           | Delete a shipment by id                      |
+| GET    | /profile              | Yes           | Get the current user profile                 |
+| GET    | /status               | No            | Health info for the service                  |
+| GET    | /ping                 | No            | Simple liveness check                        |
+
+## Architecture (ASCII)
+
 ```
-
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
-
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
-
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+		  +----------------------+
+		  |  Client / API User   |
+		  +----------+-----------+
+					 |
+					 v
+		  +----------------------+
+		  |     Express App      |
+		  |   /api routes        |
+		  +----------+-----------+
+					 |
+					 v
+		  +----------------------+
+		  |   Controllers        |
+		  +----------+-----------+
+					 |
+					 v
+		  +----------------------+
+		  |    Services          |
+		  +----------+-----------+
+					 |
+					 v
+		  +----------------------+
+		  |   Mongoose Models    |
+		  +----------+-----------+
+					 |
+					 v
+		  +----------------------+
+		  |     MongoDB          |
+		  +----------------------+
+```

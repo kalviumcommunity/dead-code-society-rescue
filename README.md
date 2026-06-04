@@ -1,57 +1,59 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# ShipAPI — Shipment Tracking Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+> REST API for tracking shipments built with Node.js, Express, and MongoDB.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js 20 |
+| Framework | Express 4 |
+| Database | MongoDB + Mongoose |
+| Auth | JWT (jsonwebtoken) |
+| Validation | Joi |
+| Hashing | bcrypt |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## Quick Start
 
-### 1. Installation
-Clone the repo and install the dependencies:
-```bash
+# 1. Clone and install
+git clone https://github.com/TChrisVivek/dead-code-society-rescue.git
+cd dead-code-society-rescue
 npm install
-```
 
-### 2. Start the Engine
-Run the development server:
-```bash
+# 2. Set up environment
+cp .env.example .env
+
+# 3. Start MongoDB locally
+mongod --dbpath ./data
+
+# 4. Start the dev server
 npm run dev
-```
-Or start in production:
-```bash
-npm start
-```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## Environment Variables
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+| Variable | Example | Required | Description |
+|----------|---------|----------|-------------|
+| PORT | 3000 | Yes | Server port |
+| DATABASE_URL | mongodb://localhost:27017/logitrack | Yes | MongoDB connection string |
+| JWT_SECRET | some-long-random-string | Yes | Must be min 32 chars |
+| NODE_ENV | development | Yes | development or production |
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+## API Reference
 
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | /api/auth/register | No | Register new user |
+| POST | /api/auth/login | No | Login, receive JWT |
+| GET | /api/shipments | Yes | List my shipments |
+| POST | /api/shipments | Yes | Create shipment |
+| GET | /api/shipments/:id | Yes | Get single shipment |
+| PATCH | /api/shipments/:id/status | Admin | Update status |
 
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+## Architecture
+
+Request
+  └─► Router (routes/)
+        └─► Controller (controllers/)
+              └─► Service (services/)
+                    └─► Model (models/)
+                          └─► MongoDB

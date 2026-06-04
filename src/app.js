@@ -1,56 +1,64 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const errorHandler = require('./middlewares/error.middleware');
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+// Routes
+const authRoutes = require('./routes/auth.routes');
+const shipmentRoutes = require('./routes/shipment.routes');
+const userRoutes = require('./routes/user.routes');
 
-// routes
-var routes = require('./routes');
+const app = express();
 
-var app = express();
-
-// middleware setup
+// Middleware
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+// Database connection
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
     useFindAndModify: false
 })
-.then(function() {
+.then(() => {
     console.log('--- DATABASE CONNECTED ---');
 })
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
+.catch((err) => {
+    console.error('DATABASE CONNECTION ERROR:', err.message);
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
+// Register routes
+app.use('/api/auth', authRoutes);
+app.use('/api/shipments', shipmentRoutes);
+app.use('/api/users', userRoutes);
 
-// welcome route
-app.get('/', function(req, res) {
+// Welcome route
+app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-// no 404 handler here, let express handle it for now
-
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
-    console.log('Server is alive on port ' + PORT);
-    console.log('Wait for MongoDB before testing...');
+// Health check status route (from original routes.js)
+app.get('/api/status', (req, res) => {
+    const os = require('os');
+    res.json({
+        os: os.type(),
+        release: os.release(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage().rss
+    });
 });
 
-// exporting for testing later
+// Error handling - MUST be last
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is alive on port ${PORT}`);
+});
+
 module.exports = app;
+

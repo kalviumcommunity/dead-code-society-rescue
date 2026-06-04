@@ -1,57 +1,79 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack API — Shipment Tracking Backend
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+> A production-ready REST API for tracking shipments, refactored from a legacy codebase. Built with Node.js, Express, and MongoDB.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## 🛠 Tech Stack
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js (Latest LTS) |
+| Framework | Express 4 |
+| Database | MongoDB + Mongoose |
+| Auth | JWT (jsonwebtoken) |
+| Validation | Joi |
+| Hashing | bcrypt (12 rounds) |
+| Documentation | JSDoc |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## 🚀 Quick Start
 
-### 1. Installation
-Clone the repo and install the dependencies:
+### 1. Clone and install
 ```bash
+git clone https://github.com/kalviumcommunity/dead-code-society-rescue.git
+cd dead-code-society-rescue
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+### 2. Set up environment
 ```bash
+cp .env.example .env
+# Fill in your DATABASE_URL and JWT_SECRET
+```
+
+### 3. Start the server
+```bash
+# Production
+npm start
+
+# Development (with nodemon)
 npm run dev
 ```
-Or start in production:
-```bash
-npm start
+
+## 🔑 Environment Variables
+
+| Variable | Example | Required | Description |
+|----------|---------|----------|-------------|
+| PORT | 3000 | No | Server port (defaults to 3000) |
+| DATABASE_URL | mongodb://localhost:27017/logitrack | Yes | MongoDB connection string |
+| JWT_SECRET | your-very-secure-secret-key | Yes | Min 32 chars recommended |
+
+## 📡 API Reference
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | No | Register a new user |
+| POST | `/api/auth/login` | No | Login and receive JWT |
+| GET | `/api/users/profile` | Yes | Get current user profile |
+| GET | `/api/shipments` | Yes | List all shipments for current user |
+| GET | `/api/shipments/:id` | Yes | Get details of a single shipment |
+| POST | `/api/shipments` | Yes | Create a new shipment |
+| PATCH | `/api/shipments/:id/status` | Admin | Update status (Admin only) |
+| DELETE | `/api/shipments/:id` | Owner/Admin | Delete a shipment |
+
+## 🏗 Architecture
+
+```text
+Request
+  └─► Router (src/routes/)
+        └─► Middleware (src/middlewares/) - Auth & Validation
+              └─► Controller (src/controllers/) - Request Parsing
+                    └─► Service (src/services/) - Business Logic
+                          └─► Model (src/models/) - Database
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## 📜 Development Features
+- **MVC Pattern**: Clear separation of concerns.
+- **Security**: bcrypt 12 rounds for passwords, JWT for auth, Joi for input sanitization.
+- **Optimized**: Fixed N+1 query problems using Mongoose `.populate()`.
+- **Global Error Handling**: Custom error classes and central middleware.
+- **Typed**: Comprehensive JSDoc for all exported functions.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
-
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
-
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.

@@ -1,57 +1,80 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# 🚚 LogiTrack API v2.0.0
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+The core API for internal shipment tracking, rescued and rebuilt with a secure MVC architecture.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## 📦 Overview
+LogiTrack helps logistics teams manage shipments securely and efficiently. This version features a complete architectural overhaul, moving from a monolithic structure to a professional, scalable MVC layout.
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+## 🛠 Tech Stack
+| Component | Technology |
+|-----------|------------|
+| **Runtime** | Node.js |
+| **Framework** | Express.js |
+| **Database** | MongoDB + Mongoose |
+| **Auth** | JWT (JSON Web Tokens) |
+| **Hashing** | Bcrypt (12 Rounds) |
+| **Validation** | Joi |
+| **IDs** | UUID v4 (Tracking IDs) |
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
+## 🚀 Quick Start
 
 ### 1. Installation
-Clone the repo and install the dependencies:
+Clone the repository and install dependencies:
 ```bash
+git clone https://github.com/kalviumcommunity/dead-code-society-rescue.git
+cd dead-code-society-rescue
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+### 2. Environment Setup
+Copy the example environment file and fill in your details:
+```bash
+cp .env.example .env
+```
+
+### 3. Run the Application
+Start the development server with nodemon:
 ```bash
 npm run dev
 ```
-Or start in production:
+Or start in production mode:
 ```bash
 npm start
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## 🔐 Environment Variables
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Server listening port |
+| `DATABASE_URL` | `mongodb://localhost:27017/logitrack` | MongoDB connection URI |
+| `JWT_SECRET` | `your_secret_here` | Secret key for JWT signing |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+## 📝 API Reference
+Base URL: `/api`
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/register` | No | Create a new user account |
+| POST | `/login` | No | Authenticate and get JWT token |
+| GET | `/profile` | Yes | Get current user's profile |
+| GET | `/shipments` | Yes | List user's shipments |
+| GET | `/shipments/:id` | Yes | Get shipment details |
+| POST | `/shipments` | Yes | Create a new shipment |
+| PATCH | `/shipments/:id/status` | Yes | Update status (Admin only for 'delivered') |
+| DELETE | `/shipments/:id` | Yes | Delete a shipment (Owner/Admin only) |
+| GET | `/ping` | No | Server health check |
+
+## 🏗 Architecture
+```text
+src/
+├── controllers/    # Handle req/res and call services
+├── middlewares/    # Auth, Validation, Error Handling
+├── models/         # Mongoose schemas and logic
+├── routes/         # API endpoint definitions
+├── services/       # Business logic & DB interaction
+├── utils/          # Helpers (hashing, JWT, etc)
+└── validators/     # Joi validation schemas
+```
 
 ---
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
-
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+*Maintained by the Dead Code Society Rescue Team*

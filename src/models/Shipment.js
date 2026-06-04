@@ -15,10 +15,8 @@ var shipmentSchema = new mongoose.Schema({
         required: true
     },
     status: {
-        // SMELL: [MEDIUM] Status is an unconstrained string, so invalid workflow states can be stored without any schema guardrail.
-        // An enum would make the allowed lifecycle explicit and safer.
-
         type: String,
+        enum: ['pending', 'in-progress', 'delivered', 'cancelled'],
         default: 'pending' // pending, in-progress, delivered, cancelled
     },
     weight: {
@@ -34,24 +32,9 @@ var shipmentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
-});
-
-// SMELL: [HIGH] This hook only runs on save(), so findByIdAndUpdate() can change records without refreshing updatedAt.
-// Timestamp maintenance needs to cover both save and update code paths or it will become misleading.
-
-// hook for pre-save on model
-shipmentSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Shipment', shipmentSchema);

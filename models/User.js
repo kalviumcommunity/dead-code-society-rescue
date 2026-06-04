@@ -13,6 +13,7 @@ var userSchema = new Schema({
         unique: true
     },
     password: {
+        // SMELL: [CRITICAL] MD5 should not be used for storing passwords.
         type: String, // using md5 for now, easy to test
         required: true
     },

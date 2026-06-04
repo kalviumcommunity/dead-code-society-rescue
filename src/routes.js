@@ -1,3 +1,4 @@
+// SMELL: [MEDIUM] var used everywhere causing hoisting bugs. Use const/let.
 var express = require('express');
 var router = express.Router();
 var User = require('../models/User'); // user model
@@ -19,11 +20,10 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] No input validation. Spread operator enables NoSQL injection.
     var userData = { ...req.body };
     
-    // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -46,14 +46,14 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
+    // SMELL: [CRITICAL] No input validation on login. Direct object passing enables NoSQL injection.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
                 return res.json({ error: 'No user found with that email' });
             }
 
-            // check md5 password
+            // SMELL: [CRITICAL] MD5 used for password validation. Instant crackability.
             if (user.password === md5(req.body.password)) {
                 // sign jwt
                 var token = jwt.sign(
@@ -88,6 +88,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate auth logic. Extract into a centralized middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -110,7 +111,7 @@ router.get('/shipments', function(req, res) {
                 for (var i = 0; i < shipments.length; i++) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
-                        // Calling DB inside a loop is standard right?
+                        // SMELL: [HIGH] N+1 Query Problem. Querying DB inside a loop causes n+1 network calls.
                         User.findById(ship.userId)
                             .then(function(u) {
                                 ship.user_details = u;
@@ -124,7 +125,8 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
-                            }); // silent failure if this fails
+                            }); 
+                            // SMELL: [HIGH] Missing .catch() inside loop DB query. Silent failure risk.
                     })(i);
                 }
             })
@@ -138,6 +140,7 @@ router.get('/shipments', function(req, res) {
 // GET /shipments/:id - get one shipment
 router.get('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate auth logic. Extract into a centralized middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -169,6 +172,7 @@ router.get('/shipments/:id', function(req, res) {
 // POST /shipments - create shipment
 router.post('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate auth logic. Extract into a centralized middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -186,7 +190,7 @@ router.post('/shipments', function(req, res) {
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
-            status: 'pending' // magic string
+            status: 'pending' // SMELL: [MEDIUM] Magic string 'pending'. Use constants.
         });
 
         newShipment.save()
@@ -203,6 +207,7 @@ router.post('/shipments', function(req, res) {
 // PATCH /shipments/:id/status - change status
 router.patch('/shipments/:id/status', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate auth logic. Extract into a centralized middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -212,8 +217,8 @@ router.patch('/shipments/:id/status', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // logic: only admins can mark as delivered
-        if (req.body.status === 'delivered') { // magic string comparison
+        // SMELL: [MEDIUM] Magic string 'delivered' used for status.
+        if (req.body.status === 'delivered') {
             if (req.userRole !== 'admin') {
                 return res.json({ error: 'Admins only can deliver' });
             }
@@ -232,6 +237,7 @@ router.patch('/shipments/:id/status', function(req, res) {
 // DELETE /shipments/:id - remove shipment
 router.delete('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate auth logic. Extract into a centralized middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -241,7 +247,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [HIGH] Missing authorization check. Any logged-in user can delete any shipment.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -259,6 +265,7 @@ router.delete('/shipments/:id', function(req, res) {
 // GET /profile - current user
 router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Duplicate auth logic. Extract into a centralized middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -271,7 +278,7 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            }); // SMELL: [HIGH] Missing .catch() in promise chain.
     });
 });
 

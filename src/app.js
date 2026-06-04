@@ -36,6 +36,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-
-// exporting for testing later
-module.exports = app;

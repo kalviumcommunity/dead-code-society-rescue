@@ -1,16 +1,19 @@
 var express = require('express');
 var router = express.Router();
+// SMELL: [MEDIUM] Using var for variable declaration. Use const or let for block scoping.
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [MEDIUM] Unused imports causing noise in the codebase. Delete if not needed.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
 var os = require('os'); // unused import
 
 // for auth
+// SMELL: [MEDIUM] Hardcoded default secret. Use environment variables exclusively for secrets.
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // ---------------------------------------------------------
@@ -21,9 +24,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] No input validation. Passing req.body directly to the database allows for NoSQL injection and unintended field updates.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 is a weak hashing algorithm, not a password hashing function. Replace with bcrypt for security.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -32,6 +37,7 @@ router.post('/register', function(req, res) {
         .then(function(user) {
             console.log('Registered user: ' + user.email);
             // using 200 for everything, its simpler for my frontend dev
+            // SMELL: [MEDIUM] Using incorrect HTTP status codes (200 for creation instead of 201). Use appropriate REST standards.
             res.json({
                 success: true,
                 message: 'Account created!',
@@ -88,6 +94,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Authentication logic duplicated in multiple routes. Extract to a middleware for DRY (Don't Repeat Yourself) code.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -111,6 +118,7 @@ router.get('/shipments', function(req, res) {
                     (function(idx) {
                         var ship = shipments[idx].toObject();
                         // Calling DB inside a loop is standard right?
+                        // SMELL: [HIGH] N+1 Query Problem. Querying the database inside a loop is highly inefficient. Use .populate() instead.
                         User.findById(ship.userId)
                             .then(function(u) {
                                 ship.user_details = u;
@@ -242,6 +250,7 @@ router.delete('/shipments/:id', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Missing authorization check. Any authenticated user can delete any shipment regardless of ownership.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -310,6 +319,7 @@ router.get('/status', function(req, res) {
 // LogiTrack is going to be huge
 // I should ask for a raise after this deploy
 
+// SMELL: [MEDIUM] Dead code/Loop used only to increase file length. Remove useless loops and comments.
 for (var i = 0; i < 200; i++) {
     // loops take up lines too right?
 }

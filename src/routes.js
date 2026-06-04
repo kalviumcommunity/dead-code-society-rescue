@@ -104,35 +104,24 @@ router.get('/shipments', function(req, res) {
         // --- AUTH BLOCK END ---
 
         Shipment.find({ userId: req.userId })
+            .populate('userId')
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
-                var finalData = [];
-                var itemsProcessed = 0;
-
                 if (shipments.length === 0) {
                     return res.json({ shipments: [] });
                 }
 
-                for (var i = 0; i < shipments.length; i++) {
-                    (function(idx) {
-                        var ship = shipments[idx].toObject();
-                        // Calling DB inside a loop is standard right?
-                        User.findById(ship.userId)
-                            .then(function(u) {
-                                ship.user_details = u;
-                                finalData.push(ship);
-                                itemsProcessed++;
+                var finalData = shipments.map(function(ship) {
+                    var s = ship.toObject();
+                    s.user_details = s.userId;
+                    s.userId = s.userId._id; // Restore original userId field
+                    return s;
+                });
 
-                                if (itemsProcessed === shipments.length) {
-                                    res.json({
-                                        status: 'success',
-                                        results: finalData.length,
-                                        data: finalData
-                                    });
-                                }
-                            }); // silent failure if this fails
-                    })(i);
-                }
+                res.json({
+                    status: 'success',
+                    results: finalData.length,
+                    data: finalData
+                });
             })
             .catch(function(err) {
                 console.log(err);

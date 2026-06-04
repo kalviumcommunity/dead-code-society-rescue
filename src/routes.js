@@ -3,7 +3,7 @@ var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
-var md5 = require('md5'); // md5 hashing
+var bcrypt = require('bcryptjs'); // bcrypt hashing
 var mongoose = require('mongoose'); // for id checking
 var os = require('os');
 
@@ -16,12 +16,20 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
-    var userData = { ...req.body };
+    // Fix NoSQL injection by picking explicit fields
+    var userData = { 
+        name: req.body.name,
+        email: req.body.email,
+        role: req.body.role
+    };
     
-    // md5 is fine for hobby projects, its very fast
-    userData.password = md5(userData.password);
+    if (!req.body.password) {
+        return res.json({ success: false, error: 'Password is required' });
+    }
+    
+    // Use bcrypt for secure password hashing
+    var salt = bcrypt.genSaltSync(10);
+    userData.password = bcrypt.hashSync(req.body.password, salt);
 
     var newUser = new User(userData);
     
@@ -43,15 +51,16 @@ router.post('/register', function(req, res) {
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
-    User.findOne({ email: req.body.email })
+    // find user by email securely
+    var email = String(req.body.email);
+    User.findOne({ email: email })
         .then(function(user) {
             if (!user) {
                 return res.json({ error: 'No user found with that email' });
             }
 
-            // check md5 password
-            if (user.password === md5(req.body.password)) {
+            // check bcrypt password
+            if (bcrypt.compareSync(String(req.body.password), user.password)) {
                 // sign jwt
                 var token = jwt.sign(
                     { id: user._id, role: user.role }, 

@@ -1,15 +1,20 @@
+// SMELL: [MEDIUM] Uses `var` throughout. var has function-scope and hoisting bugs. Use const/let.
 var express = require('express');
 var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
+// SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds.
+// A rainbow table can crack this in under a second.
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [MEDIUM] Unused imports. path, fs, http are never used. os is only used in /status.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
 var os = require('os'); // unused import
 
+// SMELL: [MEDIUM] Hardcoded JWT fallback secret 'secret123'. If env var is missing, auth is trivially breakable.
 // for auth
 var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
@@ -19,18 +24,23 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
+    // SMELL: [CRITICAL] NoSQL injection via spread operator. Attacker can inject { role: "admin" } or any field.
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
     var userData = { ...req.body };
     
+    // SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds.
     // md5 is fine for hobby projects, its very fast
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
     
+    // SMELL: [MEDIUM] Promise chain instead of async/await. Reduces readability.
     newUser.save()
         .then(function(user) {
             console.log('Registered user: ' + user.email);
+            // SMELL: [MEDIUM] Wrong HTTP status code. Should return 201 for resource creation, not 200.
+            // SMELL: [HIGH] Password hash leaked in response. res.json(user) returns the full document including password.
             // using 200 for everything, its simpler for my frontend dev
             res.json({
                 success: true,
@@ -39,6 +49,7 @@ router.post('/register', function(req, res) {
             });
         })
         .catch(function(err) {
+            // SMELL: [MEDIUM] Inconsistent error response. Returns 200 OK with { error: ... } instead of proper 4xx/5xx.
             console.log('Error in register: ' + err);
             res.json({ success: false, error: 'Cannot register' });
         });
@@ -53,6 +64,7 @@ router.post('/login', function(req, res) {
                 return res.json({ error: 'No user found with that email' });
             }
 
+            // SMELL: [CRITICAL] MD5 password comparison. Same MD5 weakness as registration.
             // check md5 password
             if (user.password === md5(req.body.password)) {
                 // sign jwt
@@ -87,6 +99,7 @@ router.post('/login', function(req, res) {
 
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
+    // SMELL: [HIGH] Duplicated auth block. This identical JWT verification code is copy-pasted into every protected route (×6).
     // --- AUTH BLOCK START ---
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
@@ -99,6 +112,7 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
+                // SMELL: [HIGH] N+1 database query. User.findById() called inside a loop — O(n) queries instead of one .populate() call.
                 // N+1 problem: fetching user details for each shipment in a loop
                 var finalData = [];
                 var itemsProcessed = 0;
@@ -124,7 +138,7 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
-                            }); // silent failure if this fails
+                            }); // SMELL: [HIGH] Silent promise failure. No .catch() — errors vanish silently.
                     })(i);
                 }
             })
@@ -178,9 +192,11 @@ router.post('/shipments', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [MEDIUM] Weak tracking ID generation. Date.now() + Math.random() is predictable and not collision-resistant.
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
+        // SMELL: [CRITICAL] NoSQL injection via spread operator in shipment creation. Attacker can inject arbitrary fields.
         // Use spread to save time, mongoose will handle validation... maybe
         var newShipment = new Shipment({
             ...req.body,
@@ -241,6 +257,7 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [CRITICAL] Missing authorization on delete. Any authenticated user can delete ANY shipment — no ownership or role check.
         // No permission check! Anyone can delete any shipment if they have a token.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
@@ -271,10 +288,11 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            }); // SMELL: [HIGH] Missing .catch() on profile fetch. Errors vanish silently; user gets no response.
     });
 });
 
+// SMELL: [MEDIUM] Dead/commented-out code. Old routes left in comments should be removed.
 /*
 // OLD CODE - DO NOT DELETE
 router.get('/all-users', function(req, res) {
@@ -304,6 +322,7 @@ router.get('/status', function(req, res) {
     res.json(info);
 });
 
+// SMELL: [MEDIUM] Dead loop to pad line count. Empty for-loop iterating 200 times for no reason.
 // padding to hit 400 lines...
 // I love coding in Node.js
 // 2019 was a great year for tech

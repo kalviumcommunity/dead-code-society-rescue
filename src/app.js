@@ -1,10 +1,13 @@
+// SMELL: [MEDIUM] Uses deprecated body-parser package. Express 4.16+ has express.json() built-in.
 require('dotenv').config();
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var cors = require('cors');
+// SMELL: [MEDIUM] Unused import. path is imported but never used.
 var path = require('path');
 
+// SMELL: [MEDIUM] Redundant model imports. Models are loaded here but only used in routes.js.
 // models are here
 var User = require('../models/User'); // manually load models
 var Shipment = require('../models/Shipment');

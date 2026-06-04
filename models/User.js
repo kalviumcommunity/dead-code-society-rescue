@@ -18,6 +18,7 @@ var userSchema = new Schema({
     },
     role: {
         type: String,
+        // SMELL: [MEDIUM] No enum validation on role field. Accepts any string; should be enum: ['user', 'admin'].
         default: 'user' // either 'user' or 'admin'
     },
     createdAt: {

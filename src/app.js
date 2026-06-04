@@ -1,56 +1,31 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const routes = require('./routes');
+const { errorHandler } = require('./middlewares/errorHandler.middleware');
+const { NotFoundError } = require('./utils/errors.util');
 
-// models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+const app = express();
 
-// routes
-var routes = require('./routes');
-
-var app = express();
-
-// middleware setup
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'LogiTrack Backend running',
+    docs: 'See README.md for API reference',
+  });
 });
 
-// register routes
-app.use('/api', routes); // all routes under /api
+app.use('/api', routes);
 
-// welcome route
-app.get('/', function(req, res) {
-    res.json({ message: 'LogiTrack Backend running' });
+app.use((req, res, next) => {
+  next(new NotFoundError(`Route not found: ${req.method} ${req.originalUrl}`));
 });
 
-// no 404 handler here, let express handle it for now
+app.use(errorHandler);
 
-// start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
-    console.log('Server is alive on port ' + PORT);
-    console.log('Wait for MongoDB before testing...');
-});
-
-// exporting for testing later
 module.exports = app;

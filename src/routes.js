@@ -1,10 +1,14 @@
+// SMELL: [HIGH] Using 'var' instead of 'const/let'. This allows unintended hoisting and variable shadowing.
 var express = require('express');
+// SMELL: [HIGH] Using 'var' instead of 'const/let'.
 var router = express.Router();
 var User = require('../models/User'); // user model
 var Shipment = require('../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
+// SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds. Rainbow tables can crack this in under a second.
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking
+// SMELL: [MEDIUM] Unused imports: path, fs, http, os. Remove to reduce dependencies and confusion.
 var path = require('path'); // unused import
 var fs = require('fs'); // unused import
 var http = require('http'); // unused import
@@ -19,15 +23,17 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
 // POST /register - make a new account
 router.post('/register', function(req, res) {
-    // Just save whatever the user sends in req.body.
-    // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [CRITICAL] NoSQL injection vulnerability. Using spread operator on req.body allows attacker to send arbitrary fields.
+    // An attacker could send {"email": "test@test.com", "password": "123", "role": "admin"} and bypass role validation.
     var userData = { ...req.body };
     
-    // md5 is fine for hobby projects, its very fast
+    // SMELL: [CRITICAL] MD5 is not a password hashing algorithm. Use bcrypt with 12 rounds. Rainbow tables can crack this in under a second.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
     
+    // SMELL: [HIGH] Promise chain without input validation. No checks for required fields like email format, password strength.
+    // SMELL: [MEDIUM] Using 200 status for success. Should use 201 (Created) for resource creation.
     newUser.save()
         .then(function(user) {
             console.log('Registered user: ' + user.email);
@@ -40,20 +46,21 @@ router.post('/register', function(req, res) {
         })
         .catch(function(err) {
             console.log('Error in register: ' + err);
+            // SMELL: [MEDIUM] Generic error message leaks nothing useful. Not consistent with REST standards.
             res.json({ success: false, error: 'Cannot register' });
         });
 });
 
 // POST /login - get a token
 router.post('/login', function(req, res) {
-    // find user by email - direct spread again for injection
+    // SMELL: [HIGH] No input validation. Attacker can send any data structure.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
                 return res.json({ error: 'No user found with that email' });
             }
 
-            // check md5 password
+            // SMELL: [CRITICAL] MD5 comparison for passwords is insecure. Use bcrypt.compare() instead.
             if (user.password === md5(req.body.password)) {
                 // sign jwt
                 var token = jwt.sign(
@@ -77,6 +84,7 @@ router.post('/login', function(req, res) {
         })
         .catch(function(err) {
             console.log('Login crash: ' + err);
+            // SMELL: [MEDIUM] Swallowing errors and returning generic message. Should log and return 500 status.
             res.json({ error: 'Server error' });
         });
 });
@@ -88,6 +96,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Authentication logic duplicated in every route. Extract into middleware.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -99,7 +108,9 @@ router.get('/shipments', function(req, res) {
 
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
-                // N+1 problem: fetching user details for each shipment in a loop
+                // SMELL: [CRITICAL] N+1 Query Problem: Fetching user details for each shipment in a loop.
+                // If a user has 100 shipments, this makes 101 queries (1 for shipments + 100 for users).
+                // Solution: Use Shipment.populate('userId') to fetch user data in a single aggregated query.
                 var finalData = [];
                 var itemsProcessed = 0;
 
@@ -124,7 +135,7 @@ router.get('/shipments', function(req, res) {
                                         data: finalData
                                     });
                                 }
-                            }); // silent failure if this fails
+                            }); // SMELL: [HIGH] silent failure: missing .catch() block. Errors are swallowed.
                     })(i);
                 }
             })
@@ -181,20 +192,23 @@ router.post('/shipments', function(req, res) {
         // generation of tracking id
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
-        // Use spread to save time, mongoose will handle validation... maybe
+        // SMELL: [MEDIUM] No input validation. Attacker can send invalid or missing fields (origin, destination, weight, carrier).
+        // Mongoose validation is weak. Use a dedicated validation library like Joi.
         var newShipment = new Shipment({
             ...req.body,
             trackingId: trackId,
             userId: req.userId,
-            status: 'pending' // magic string
+            status: 'pending' // SMELL: [MEDIUM] Magic string. Define status constants as ENUM or const.
         });
 
         newShipment.save()
             .then(function(saved) {
+                // SMELL: [MEDIUM] Returns 200 status. Should return 201 (Created).
                 res.json(saved);
             })
             .catch(function(err) {
                 console.log('Error saving shipment');
+                // SMELL: [MEDIUM] Returning raw error object. Should return sanitized error message and use 400/500 status.
                 res.json({ error: err });
             });
     });
@@ -212,8 +226,9 @@ router.patch('/shipments/:id/status', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
+        // SMELL: [MEDIUM] No input validation. status could be an invalid value.
         // logic: only admins can mark as delivered
-        if (req.body.status === 'delivered') { // magic string comparison
+        if (req.body.status === 'delivered') { // SMELL: [MEDIUM] Magic string. Use enum or constants.
             if (req.userRole !== 'admin') {
                 return res.json({ error: 'Admins only can deliver' });
             }
@@ -241,7 +256,9 @@ router.delete('/shipments/:id', function(req, res) {
         req.userRole = decoded.role;
         // --- AUTH BLOCK END ---
 
-        // No permission check! Anyone can delete any shipment if they have a token.
+        // SMELL: [CRITICAL] Authorization bypass: No permission check! Any authenticated user can delete ANY shipment, not just their own.
+        // An attacker with a valid token could send DELETE /api/shipments/<someone-else-id> and delete their shipment.
+        // Fix: Check if shipment.userId === req.userId or req.userRole === 'admin' before deleting.
         Shipment.findByIdAndDelete(req.params.id)
             .then(function() {
                 res.json({ message: 'Deleted ' + req.params.id });
@@ -271,7 +288,9 @@ router.get('/profile', function(req, res) {
         User.findById(req.userId)
             .then(function(user) {
                 res.json(user);
-            }); // missing catch
+            })
+            // SMELL: [HIGH] missing .catch() block. If the query fails, the response is never sent and client hangs forever.
+            // This should have a .catch(err => res.status(500).json({ error: err.message }))
     });
 });
 

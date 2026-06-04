@@ -1,17 +1,12 @@
 const User = require('../models/User');
 const { sanitizeUser } = require('./authService');
-
-function createError(status, message) {
-    const error = new Error(message);
-    error.status = status;
-    return error;
-}
+const { NotFoundError } = require('../utils/errors.util');
 
 async function getProfile(userId) {
     const user = await User.findById(userId);
 
     if (!user) {
-        throw createError(404, 'User not found');
+        throw new NotFoundError('User not found');
     }
 
     return sanitizeUser(user);

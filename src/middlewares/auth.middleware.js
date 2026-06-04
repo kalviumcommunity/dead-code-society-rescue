@@ -1,4 +1,5 @@
 const tokenUtils = require('../utils/token');
+const { UnauthorizedError } = require('../utils/errors.util');
 
 function extractToken(headerValue) {
     if (!headerValue) {
@@ -16,7 +17,7 @@ function auth(req, res, next) {
     const token = extractToken(req.headers.authorization);
 
     if (!token) {
-        return res.status(401).json({ error: 'Unauthorized: missing token' });
+        return next(new UnauthorizedError('Unauthorized: missing token'));
     }
 
     try {
@@ -27,7 +28,7 @@ function auth(req, res, next) {
         };
         return next();
     } catch (err) {
-        return res.status(401).json({ error: 'Unauthorized: invalid token' });
+        return next(new UnauthorizedError('Unauthorized: invalid token'));
     }
 }
 

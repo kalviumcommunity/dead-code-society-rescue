@@ -1,11 +1,6 @@
 const Shipment = require('../models/Shipment');
 const { sanitizeUser } = require('./authService');
-
-function createError(status, message) {
-    const error = new Error(message);
-    error.status = status;
-    return error;
-}
+const { NotFoundError, UnauthorizedError, ConflictError } = require('../utils/errors.util');
 
 function canAccessShipment(shipment, user) {
     return user.role === 'admin' || shipment.userId.toString() === String(user.id);
@@ -35,11 +30,11 @@ async function getShipmentById(id, user) {
     const shipment = await Shipment.findById(id).populate('userId');
 
     if (!shipment) {
-        throw createError(404, 'Not found');
+        throw new NotFoundError('Not found');
     }
 
     if (!canAccessShipment(shipment, user)) {
-        throw createError(403, 'No access to this shipment');
+        throw new UnauthorizedError('No access to this shipment');
     }
 
     return normalizeShipment(shipment);
@@ -56,22 +51,30 @@ async function createShipment(payload, user) {
         status: 'pending'
     });
 
-    return shipment.save();
+    try {
+        return await shipment.save();
+    } catch (error) {
+        if (error && error.code === 11000) {
+            throw new ConflictError('Shipment tracking id already exists');
+        }
+
+        throw error;
+    }
 }
 
 async function updateShipmentStatus(id, status, user) {
     const shipment = await Shipment.findById(id);
 
     if (!shipment) {
-        throw createError(404, 'Not found');
+        throw new NotFoundError('Not found');
     }
 
     if (!canAccessShipment(shipment, user)) {
-        throw createError(403, 'No access to this shipment');
+        throw new UnauthorizedError('No access to this shipment');
     }
 
     if (status === 'delivered' && user.role !== 'admin') {
-        throw createError(403, 'Admins only can deliver');
+        throw new UnauthorizedError('Admins only can deliver');
     }
 
     shipment.status = status;
@@ -82,11 +85,11 @@ async function deleteShipment(id, user) {
     const shipment = await Shipment.findById(id);
 
     if (!shipment) {
-        throw createError(404, 'Not found');
+        throw new NotFoundError('Not found');
     }
 
     if (!canAccessShipment(shipment, user)) {
-        throw createError(403, 'No access to this shipment');
+        throw new UnauthorizedError('No access to this shipment');
     }
 
     await Shipment.deleteOne({ _id: id });

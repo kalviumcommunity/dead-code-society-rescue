@@ -1,12 +1,7 @@
 const User = require('../models/User');
 const { hashPassword, verifyPassword } = require('../utils/hash');
 const { signToken } = require('../utils/token');
-
-function createError(status, message) {
-    const error = new Error(message);
-    error.status = status;
-    return error;
-}
+const { ConflictError, NotFoundError, UnauthorizedError } = require('../utils/errors.util');
 
 function sanitizeUser(user) {
     return {
@@ -28,21 +23,29 @@ async function registerUser(payload) {
         role: 'user'
     });
 
-    const savedUser = await user.save();
-    return sanitizeUser(savedUser);
+    try {
+        const savedUser = await user.save();
+        return sanitizeUser(savedUser);
+    } catch (error) {
+        if (error && error.code === 11000) {
+            throw new ConflictError('Email already exists');
+        }
+
+        throw error;
+    }
 }
 
 async function loginUser(payload) {
     const user = await User.findOne({ email: payload.email }).select('+password');
 
     if (!user) {
-        throw createError(404, 'No user found with that email');
+        throw new UnauthorizedError('Invalid credentials');
     }
 
     const isValid = await verifyPassword(payload.password, user.password);
 
     if (!isValid) {
-        throw createError(401, 'Invalid credentials');
+        throw new UnauthorizedError('Invalid credentials');
     }
 
     return {

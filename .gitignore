@@ -42,3 +42,6 @@ typings/
 # Build files
 dist/
 build/
+
+# Local env files
+.env

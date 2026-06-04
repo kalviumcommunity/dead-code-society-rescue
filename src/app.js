@@ -1,18 +1,21 @@
 require('dotenv').config();
-var express = require('express');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var cors = require('cors');
-var path = require('path');
+const express = require('express');
+const mongoose = require('mongoose');
+mongoose.set('debug', true);
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const path = require('path');
+const { errorHandler } = require('./middlewares/error.middleware');
+const { NotFoundError } = require('./utils/errors.util');
 
 // models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+const User = require('./models/User'); // manually load models
+const Shipment = require('./models/Shipment');
 
 // routes
-var routes = require('./routes');
+const routes = require('./routes');
 
-var app = express();
+const app = express();
 
 // middleware setup
 app.use(cors());
@@ -20,34 +23,69 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
-var mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
-mongoose.connect(mongoUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-})
-.then(function() {
-    console.log('--- DATABASE CONNECTED ---');
-})
-.catch(function(err) {
-    console.log('DATABASE CONNECTION ERROR:');
-    console.log(err);
-});
+const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost:27017/logitrack';
+const isLocalhost = mongoUrl.indexOf('localhost:27017') !== -1 || mongoUrl.indexOf('127.0.0.1:27017') !== -1;
+
+function connectDb(url) {
+    return mongoose.connect(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+        serverSelectionTimeoutMS: 1500
+    });
+}
+
+async function initDb() {
+    if (isLocalhost) {
+        try {
+            await connectDb(mongoUrl);
+            console.log('--- DATABASE CONNECTED (Local MongoDB) ---');
+        } catch (err) {
+            console.log('Local MongoDB not running. Starting MongoMemoryServer...');
+            try {
+                const { MongoMemoryServer } = require('mongodb-memory-server');
+                const mongoServer = await MongoMemoryServer.create();
+                const inMemoryUri = mongoServer.getUri();
+                await connectDb(inMemoryUri);
+                console.log('--- DATABASE CONNECTED (MongoMemoryServer) --- ' + inMemoryUri);
+            } catch (e) {
+                console.log('DATABASE CONNECTION ERROR:');
+                console.log(e);
+            }
+        }
+    } else {
+        try {
+            await connectDb(mongoUrl);
+            console.log('--- DATABASE CONNECTED ---');
+        } catch (err) {
+            console.log('DATABASE CONNECTION ERROR:');
+            console.log(err);
+        }
+    }
+}
+
+initDb();
 
 // register routes
 app.use('/api', routes); // all routes under /api
 
 // welcome route
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });
 });
 
-// no 404 handler here, let express handle it for now
+// 404 handler for undefined routes
+app.use((req, res, next) => {
+    next(new NotFoundError(`Route ${req.originalUrl} not found`));
+});
+
+// centralized error handler
+app.use(errorHandler);
 
 // start server
-var PORT = process.env.PORT || 3000;
-app.listen(PORT, function() {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
     console.log('Server is alive on port ' + PORT);
     console.log('Wait for MongoDB before testing...');
 });

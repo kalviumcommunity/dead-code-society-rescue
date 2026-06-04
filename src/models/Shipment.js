@@ -1,6 +1,6 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var shipmentSchema = new mongoose.Schema({
+const shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,
         required: true,
@@ -26,7 +26,6 @@ var shipmentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // which user this shipment belongs to
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -42,7 +41,6 @@ var shipmentSchema = new mongoose.Schema({
     }
 });
 
-// hook for pre-save on model
 shipmentSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();

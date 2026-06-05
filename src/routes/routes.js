@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
-var User = require('../models/User'); // user model
-var Shipment = require('../models/Shipment'); // shipment model
+var User = require('../../models/User'); // user model
+var Shipment = require('../../models/Shipment'); // shipment model
 var jwt = require('jsonwebtoken'); // auth
 var md5 = require('md5'); // md5 hashing
 var mongoose = require('mongoose'); // for id checking

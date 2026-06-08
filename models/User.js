@@ -1,29 +1,46 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var Schema = mongoose.Schema;
-
-var userSchema = new Schema({
+/**
+ * User Model Schema
+ * @typedef {Object} User
+ * @property {string} name - User's full name
+ * @property {string} email - Unique email address
+ * @property {string} password - bcrypt hashed password
+ * @property {string} role - User role ('user' or 'admin')
+ * @property {Date} createdAt - Account creation timestamp
+ */
+const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: [true, 'Name is required'],
+        trim: true,
+        minlength: [2, 'Name must be at least 2 characters']
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        required: [true, 'Email is required'],
+        unique: [true, 'Email already registered'],
+        lowercase: true,
+        trim: true,
+        match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
     },
     password: {
-        type: String, // using md5 for now, easy to test
-        required: true
+        type: String,
+        required: [true, 'Password is required'],
+        minlength: [8, 'Password must be at least 8 characters'],
+        select: false
     },
     role: {
         type: String,
-        default: 'user' // either 'user' or 'admin'
+        enum: ['user', 'admin'],
+        default: 'user'
     },
     createdAt: {
         type: Date,
         default: Date.now
     }
 });
+
+userSchema.index({ email: 1 });
 
 module.exports = mongoose.model('User', userSchema);

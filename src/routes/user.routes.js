@@ -6,10 +6,6 @@ const auth = require("../middlewares/auth.middleware");
 
 const userController = require("../controllers/user.controller");
 
-router.get(
-    "/profile",
-    auth,
-    userController.profile
-);
+router.get("/profile", auth, userController.profile);
 
 module.exports = router;

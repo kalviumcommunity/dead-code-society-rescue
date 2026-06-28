@@ -28,12 +28,21 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
   { timestamps: true }
 );
 
 /**
- * Hash password before saving
+ * Mongoose pre-save hook that hashes the password with bcrypt (12 salt rounds)
+ * whenever it is set or changed. Skips re-hashing if password wasn't modified.
+ * @param {Function} next - Mongoose middleware callback
+ * @returns {Promise<void>}
  */
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -45,7 +54,11 @@ userSchema.pre("save", async function (next) {
 });
 
 /**
- * Compare password method
+ * Instance method that compares a plaintext password against this user's stored hash.
+ * Note: requires the document to have been fetched with `.select('+password')`,
+ * since `password` is excluded by default.
+ * @param {string} enteredPassword - Plaintext password to verify
+ * @returns {Promise<boolean>} True if the password matches, false otherwise
  */
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);

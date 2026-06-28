@@ -1,7 +1,6 @@
 const User = require("../models/User");
 
 const {
-    hashPassword,
     comparePassword
 } = require("../utils/bcrypt.util");
 
@@ -16,7 +15,14 @@ const {
 } = require("../utils/errors.util");
 
 /**
- * Register User
+ * Registers a new user account. The password is hashed automatically by the
+ * User model's pre-save hook before being persisted.
+ * @param {Object} body - Validated registration payload
+ * @param {string} body.name - User's full name
+ * @param {string} body.email - User's email address (must be unique)
+ * @param {string} body.password - Plaintext password (min 6 characters)
+ * @returns {Promise<Object>} The newly created user document
+ * @throws {ConflictError} If a user with the given email already exists
  */
 const register = async (body) => {
 
@@ -30,8 +36,6 @@ const register = async (body) => {
 
     }
 
-    body.password = await hashPassword(body.password);
-
     const user = await User.create(body);
 
     return user;
@@ -39,13 +43,18 @@ const register = async (body) => {
 };
 
 /**
- * Login
+ * Authenticates a user by email and password, and returns a signed JWT.
+ * @param {string} email - User's email address
+ * @param {string} password - Plaintext password to verify
+ * @returns {Promise<{token: string, user: Object}>} Signed JWT and the matched user document
+ * @throws {NotFoundError} If no user exists with the given email
+ * @throws {UnauthorizedError} If the password does not match
  */
 const login = async (email, password) => {
 
     const user = await User.findOne({
         email
-    });
+    }).select("+password");
 
     if (!user) {
 

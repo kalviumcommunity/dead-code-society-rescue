@@ -5,7 +5,10 @@ const {
 } = require("../utils/errors.util");
 
 /**
- * Get Profile
+ * Retrieves a user's profile by id.
+ * @param {string} id - MongoDB ObjectId of the user
+ * @returns {Promise<Object>} The matched user document
+ * @throws {NotFoundError} If no user exists with the given id
  */
 const profile = async (id) => {
 

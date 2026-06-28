@@ -19,6 +19,12 @@ router.get(
     shipmentController.getAll
 );
 
+router.get(
+    "/:id",
+    auth,
+    shipmentController.getById
+);
+
 router.post(
     "/",
     auth,
@@ -31,6 +37,12 @@ router.patch(
     auth,
     validate(updateShipmentSchema),
     shipmentController.updateStatus
+);
+
+router.delete(
+    "/:id",
+    auth,
+    shipmentController.remove
 );
 
 module.exports = router;

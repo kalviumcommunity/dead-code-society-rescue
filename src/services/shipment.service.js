@@ -29,9 +29,7 @@ const createShipment = async (body, userId) => {
 
         ...body,
 
-        trackingId:
-            "SHIP-" +
-            Date.now(),
+        trackingId: `SHIP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
 
         userId,
 

@@ -17,9 +17,8 @@ exports.updateShipmentSchema = Joi.object({
     status: Joi.string()
         .valid(
             "pending",
-            "in-progress",
-            "delivered",
-            "cancelled"
+            "in_transit",
+            "delivered"
         )
         .required()
 

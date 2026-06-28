@@ -3,10 +3,10 @@ dns.setServers(['1.1.1.1', '8.8.8.8']);
 require("dotenv").config();
 
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 
 const routes = require("./routes");
+const connectDB = require("./config/db");
 const errorMiddleware = require("./middlewares/error.middleware");
 
 const app = express();
@@ -15,10 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-mongoose
-    .connect(process.env.DATABASE_URL)
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch((err) => console.error(err));
+connectDB();
 
 app.get("/", (req, res) => {
     res.json({

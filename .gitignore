@@ -42,3 +42,7 @@ typings/
 # Build files
 dist/
 build/
+
+# ADDED: Ignored .env to prevent committing sensitive environment configuration files.
+.env
+.env.local

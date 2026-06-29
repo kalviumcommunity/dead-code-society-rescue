@@ -1,6 +1,7 @@
-var mongoose = require('mongoose');
+// ADDED: Shipment model defining schema and structure in MVC pattern for proper data management.
+const mongoose = require('mongoose');
 
-var shipmentSchema = new mongoose.Schema({
+const shipmentSchema = new mongoose.Schema({
     trackingId: {
         type: String,
         required: true,

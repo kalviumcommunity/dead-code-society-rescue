@@ -1,5 +1,15 @@
 const { AppError } = require('../utils/errors.util');
 
+/**
+ * Express centralized error handling middleware.
+ * Formats errors and returns appropriate HTTP responses.
+ * 
+ * @param {Error|AppError} err - Error object thrown by the application
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {void}
+ */
 module.exports = (err, req, res, next) => {
     if (res.headersSent) {
         return next(err);

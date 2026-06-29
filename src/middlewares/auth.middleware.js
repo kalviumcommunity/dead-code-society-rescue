@@ -1,12 +1,21 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
+/**
+ * Express middleware to authenticate requests using JWT.
+ * Validates the Authorization header token and attaches decoded user details to the request object.
+ * 
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {void}
+ */
 module.exports = (req, res, next) => {
     const token = req.headers['authorization'];
-    if (!token) return res.json({ error: 'Unauthorized: missing token' });
+    if (!token) return res.status(401).json({ error: 'Unauthorized: missing token' });
     
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) return res.json({ error: 'Unauthorized: invalid token' });
+        if (err) return res.status(401).json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
         req.userRole = decoded.role;
         next();

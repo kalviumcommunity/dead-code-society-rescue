@@ -1,3 +1,10 @@
+/**
+ * Express middleware generator to validate request bodies against a Joi schema.
+ * Sanitizes input by stripping unknown fields.
+ * 
+ * @param {import('joi').Schema} schema - Joi validation schema
+ * @returns {function(import('express').Request, import('express').Response, import('express').NextFunction): void} Express middleware function
+ */
 const validateBody = (schema) => {
     return (req, res, next) => {
         const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });

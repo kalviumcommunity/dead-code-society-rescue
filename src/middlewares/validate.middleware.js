@@ -1,3 +1,8 @@
+/**
+ * Validation middleware using Joi.
+ * @param {import('joi').ObjectSchema} schema - Joi schema to validate against
+ * @returns {Function} Express middleware function
+ */
 const validate = (schema) => {
     return (req, res, next) => {
         const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });

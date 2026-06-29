@@ -3,6 +3,11 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
+/**
+ * Registers a new user with hashed password.
+ * @param {Object} userData - User registration data
+ * @returns {Promise<Object>} The created user document
+ */
 const registerUser = async (userData) => {
     const newUserData = { ...userData };
     
@@ -13,6 +18,12 @@ const registerUser = async (userData) => {
     return await newUser.save();
 };
 
+/**
+ * Authenticates a user and generates a JWT token.
+ * @param {string} email - User's email
+ * @param {string} password - User's plain text password
+ * @returns {Promise<Object>} Object containing token or error message
+ */
 const loginUser = async (email, password) => {
     // SMELL: [HIGH] Unvalidated input used directly in query. Should use Joi validation first.
     const user = await User.findOne({ email });

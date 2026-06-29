@@ -6,8 +6,8 @@ var cors = require('cors');
 var path = require('path');
 
 // models are here
-var User = require('../models/User'); // manually load models
-var Shipment = require('../models/Shipment');
+var User = require('./models/User'); // manually load models
+var Shipment = require('./models/Shipment');
 
 // routes
 var routes = require('./routes');

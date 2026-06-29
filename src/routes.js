@@ -21,9 +21,11 @@ var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 router.post('/register', function(req, res) {
     // Just save whatever the user sends in req.body.
     // Spread operator enables NoSQL injection since we take anything!
+    // SMELL: [HIGH] Mass assignment from request body allows attackers to inject unexpected fields.
     var userData = { ...req.body };
     
     // md5 is fine for hobby projects, its very fast
+    // SMELL: [HIGH] MD5 is insecure for password hashing and should be replaced with a modern password hash.
     userData.password = md5(userData.password);
 
     var newUser = new User(userData);
@@ -47,6 +49,7 @@ router.post('/register', function(req, res) {
 // POST /login - get a token
 router.post('/login', function(req, res) {
     // find user by email - direct spread again for injection
+    // SMELL: [MEDIUM] The login route has no validation or throttling, making it easy to abuse.
     User.findOne({ email: req.body.email })
         .then(function(user) {
             if (!user) {
@@ -88,6 +91,7 @@ router.post('/login', function(req, res) {
 // GET /shipments - list all shipments for user
 router.get('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Authentication logic is duplicated across routes and uses the raw header directly.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -100,6 +104,7 @@ router.get('/shipments', function(req, res) {
         Shipment.find({ userId: req.userId })
             .then(function(shipments) {
                 // N+1 problem: fetching user details for each shipment in a loop
+                // SMELL: [HIGH] The route performs a database lookup inside a loop, causing severe N+1 query overhead.
                 var finalData = [];
                 var itemsProcessed = 0;
 
@@ -169,6 +174,7 @@ router.get('/shipments/:id', function(req, res) {
 // POST /shipments - create shipment
 router.post('/shipments', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] Shipment creation trusts the client payload and uses a magic default status.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -179,9 +185,11 @@ router.post('/shipments', function(req, res) {
         // --- AUTH BLOCK END ---
 
         // generation of tracking id
+        // SMELL: [MEDIUM] The tracking ID is manually generated and the route lacks input validation.
         var trackId = 'SHIP-' + Date.now() + '-' + Math.floor(Math.random() * 100);
         
         // Use spread to save time, mongoose will handle validation... maybe
+        // SMELL: [MEDIUM] The route accepts arbitrary shipment data without schema validation.
         var newShipment = new Shipment({
             ...req.body,
             trackingId: trackId,
@@ -203,6 +211,7 @@ router.post('/shipments', function(req, res) {
 // PATCH /shipments/:id/status - change status
 router.patch('/shipments/:id/status', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [MEDIUM] The status route uses a hard-coded string and does not check whether the shipment exists.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -232,6 +241,7 @@ router.patch('/shipments/:id/status', function(req, res) {
 // DELETE /shipments/:id - remove shipment
 router.delete('/shipments/:id', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [HIGH] Deletion is not permission-checked and anyone with a token can remove any shipment.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -259,6 +269,7 @@ router.delete('/shipments/:id', function(req, res) {
 // GET /profile - current user
 router.get('/profile', function(req, res) {
     // --- AUTH BLOCK START ---
+    // SMELL: [LOW] The profile route is missing an error handler and can leave requests hanging silently.
     var token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
@@ -314,6 +325,7 @@ for (var i = 0; i < 200; i++) {
     // loops take up lines too right?
 }
 
+// SMELL: [LOW] The file includes dead code, TODO markers, and placeholder comments that obscure the real implementation.
 // TODO: fix the N+1 problem later
 // TODO: refactor into proper controllers
 // TODO: add validation library like Joi or Zod

@@ -1,57 +1,67 @@
-# 🚚 LogiTrack API v1.0.0-beta-final
+# LogiTrack API
 
-Welcome to the **LogiTrack** backend! This is the core API for our internal shipment tracking system. Built with Node.js and MongoDB to be fast and lightweight. 🚀
+Logistics and shipment tracking backend. Restructured into a clean MVC setup.
 
-## 📦 What is LogiTrack?
-LogiTrack helps our logistics team manage shipments across the globe. It handles everything from user registration to real-time status updates and shipment management.
+## Tech Stack
+- **Runtime**: Node.js
+- **Framework**: Express
+- **Database**: MongoDB + Mongoose
+- **Auth**: JWT
+- **Validation**: Joi
+- **Hashing**: bcrypt (12 rounds)
 
-## 🛠 Features
-- 🔐 **Secure Auth**: Token-based authentication for all users.
-- 👤 **User Profiles**: Manage your account and roles.
-- 📦 **Shipment Tracking**: Create and track shipments with ease.
-- 🚫 **Role Management**: Admin-only routes for status changes.
+## Quick Start
 
-## 🚀 Getting Started
-Setting up the project is a breeze:
-
-### 1. Installation
-Clone the repo and install the dependencies:
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-### 2. Start the Engine
-Run the development server:
+### 2. Setup config
+Copy env example:
+```bash
+cp .env.example .env
+```
+Fill in database and JWT credentials in `.env`.
+
+### 3. Run server
+Development mode:
 ```bash
 npm run dev
 ```
-Or start in production:
+Production mode:
 ```bash
 npm start
 ```
 
-## 📝 API Endpoints
-The following routes are available (all under `/api`):
+## Env Variables
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Create a new account |
-| POST | `/login` | Get your token |
-| GET | `/shipments` | View your shipments |
-| POST | `/shipments` | Create new shipment |
-| PATCH | `/shipments/:id/status` | Update status (Admin) |
+| Variable | Example | Required | Description |
+|----------|---------|----------|-------------|
+| PORT | 3000 | No | Server port (default 3000) |
+| DATABASE_URL | mongodb://localhost:27017/logitrack | Yes | MongoDB connection string |
+| JWT_SECRET | secret_key | Yes | Secret key for JWT |
+| NODE_ENV | development | No | Environment mode |
 
-## 🚧 TODO List
-We have some big plans for future updates:
-- ✅ Improve database performance
-- 📧 Add automated email alerts
-- 🧪 Add unit tests for all routes
-- 🛡️ Add more robust validation
-- 📊 Dashboard frontend integration
+## API Routes
 
----
-### 🛠 Author
-*Created with ❤️ by Senior Junior Developer*
+All endpoints start with `/api`.
 
-##### 
-**Note**: Please check with the lead developer if you have issues with the database connection.
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/register` | No | Create new account |
+| POST | `/auth/login` | No | Login and get JWT |
+| GET | `/profile` | Yes | Get current user profile |
+| GET | `/shipments` | Yes | List shipments |
+| GET | `/shipments/:id` | Yes | Get a single shipment details |
+| POST | `/shipments` | Yes | Create a shipment |
+| PATCH | `/shipments/:id/status` | Yes (Admin only for 'delivered') | Update shipment status |
+| DELETE | `/shipments/:id` | Yes | Delete shipment (Owner or Admin only) |
+| GET | `/ping` | No | Server ping check |
+| GET | `/status` | No | System specs and memory diagnostics |
+
+## Architecture
+
+```text
+Request -> Router (JWT & Joi) -> Controller -> Service -> Model -> Database
+```

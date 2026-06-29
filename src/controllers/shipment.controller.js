@@ -3,8 +3,7 @@ const asyncWrapper = require('../utils/asyncWrapper');
 const { NotFoundError, UnauthorizedError } = require('../utils/errors.util');
 
 const getAllShipments = asyncWrapper(async (req, res) => {
-    const shipments = await shipmentService.getShipmentsForUser(req.userId);
-    const finalData = await shipmentService.attachUserDetailsToShipments(shipments);
+    const finalData = await shipmentService.getShipmentsForUser(req.userId);
     res.json({
         status: 'success',
         results: finalData.length,

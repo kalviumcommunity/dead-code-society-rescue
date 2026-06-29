@@ -1,6 +1,6 @@
 const shipmentService = require('../services/shipment.service');
 
-const listShipments = async (req, res) => {
+const listShipments = async (req, res, next) => {
     try {
         const data = await shipmentService.listShipments(req.userId);
         res.json({
@@ -9,45 +9,43 @@ const listShipments = async (req, res) => {
             data: data
         });
     } catch (err) {
-        console.log(err);
-        res.json({ error: 'Fetch failed' });
+        next(err);
     }
 };
 
-const getShipment = async (req, res) => {
+const getShipment = async (req, res, next) => {
     try {
         const shipment = await shipmentService.getShipment(req.params.id, req.userId, req.userRole);
         res.json(shipment);
     } catch (err) {
-        res.json({ error: err.message || 'Error on findById' });
+        next(err);
     }
 };
 
-const createShipment = async (req, res) => {
+const createShipment = async (req, res, next) => {
     try {
         const saved = await shipmentService.createShipment(req.body, req.userId);
-        res.json(saved);
+        res.status(201).json(saved);
     } catch (err) {
-        console.log('Error saving shipment');
-        res.json({ error: err.message || err });
+        next(err);
     }
 };
 
-const updateShipmentStatus = async (req, res) => {
+const updateShipmentStatus = async (req, res, next) => {
     try {
         const doc = await shipmentService.updateShipmentStatus(req.params.id, req.body.status, req.userRole);
         res.json(doc);
     } catch (err) {
-        res.json({ error: err.message || 'Update failed' });
+        next(err);
     }
 };
 
-const deleteShipment = async (req, res) => {
+const deleteShipment = async (req, res, next) => {
     try {
-        await shipmentService.deleteShipment(req.params.id);
+        await shipmentService.deleteShipment(req.params.id, req.userId, req.userRole);
         res.json({ message: 'Deleted ' + req.params.id });
     } catch (err) {
-        res.json({ error: 'Delete error' });
+        next(err);
     }
 };
 

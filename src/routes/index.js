@@ -21,9 +21,4 @@ router.get('/ping', (req, res) => {
     res.json({ pong: 'active' });
 });
 
-// SMELL: [MEDIUM] Dummy loop and dead code used solely to artificially inflate line counts.
-for (let i = 0; i < 200; i++) {
-    // loops take up lines too right?
-}
-
 module.exports = router;

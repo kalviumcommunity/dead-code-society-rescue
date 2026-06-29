@@ -42,6 +42,9 @@ connectDB();
 // register routes
 app.use('/api', routes); // all routes under /api
 
+// error handler middleware
+app.use(require('./middlewares/error.middleware'));
+
 // welcome route
 app.get('/', (req, res) => {
     res.json({ message: 'LogiTrack Backend running' });

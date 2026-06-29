@@ -1,87 +1,77 @@
-var shipmentService = require('../services/shipment.service');
+const shipmentService = require('../services/shipment.service');
 
-var getAllShipments = function(req, res) {
-    shipmentService.getShipmentsForUser(req.userId)
-        .then(function(shipments) {
-            shipmentService.attachUserDetailsToShipments(shipments)
-                .then(function(finalData) {
-                    res.json({
-                        status: 'success',
-                        results: finalData.length,
-                        data: finalData
-                    });
-                })
-                .catch(function(err) {
-                    res.json({ error: 'Fetch failed' });
-                });
-        })
-        .catch(function(err) {
-            console.log(err);
-            res.json({ error: 'Fetch failed' });
+const getAllShipments = async (req, res) => {
+    try {
+        const shipments = await shipmentService.getShipmentsForUser(req.userId);
+        const finalData = await shipmentService.attachUserDetailsToShipments(shipments);
+        res.json({
+            status: 'success',
+            results: finalData.length,
+            data: finalData
         });
-};
-
-var getShipment = function(req, res) {
-    shipmentService.getShipmentById(req.params.id)
-        .then(function(shipment) {
-            if (!shipment) {
-                return res.json({ error: 'Not found' });
-            }
-            
-            // check permissions
-            if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
-                return res.json({ error: 'No access to this shipment' });
-            }
-
-            res.json(shipment);
-        })
-        .catch(function(err) {
-            res.json({ error: 'Error on findById' });
-        });
-};
-
-var createShipment = function(req, res) {
-    shipmentService.createShipment(req.userId, req.body)
-        .then(function(saved) {
-            res.json(saved);
-        })
-        .catch(function(err) {
-            console.log('Error saving shipment');
-            res.json({ error: err });
-        });
-};
-
-var updateStatus = function(req, res) {
-    // SMELL: [MEDIUM] Magic string comparison for status. Should use constants or enums.
-    if (req.body.status === 'delivered') { // magic string comparison
-        if (req.userRole !== 'admin') {
-            return res.json({ error: 'Admins only can deliver' });
-        }
+    } catch (err) {
+        console.log(err);
+        res.json({ error: 'Fetch failed' });
     }
-
-    shipmentService.updateShipmentStatus(req.params.id, req.body.status)
-        .then(function(doc) {
-            res.json(doc);
-        })
-        .catch(function(err) {
-            res.json({ error: 'Update failed' });
-        });
 };
 
-var deleteShipment = function(req, res) {
-    shipmentService.deleteShipment(req.params.id)
-        .then(function() {
-            res.json({ message: 'Deleted ' + req.params.id });
-        })
-        .catch(function(e) {
-            res.json({ error: 'Delete error' });
-        });
+const getShipment = async (req, res) => {
+    try {
+        const shipment = await shipmentService.getShipmentById(req.params.id);
+        if (!shipment) {
+            return res.json({ error: 'Not found' });
+        }
+        
+        // check permissions
+        if (shipment.userId.toString() !== req.userId && req.userRole !== 'admin') {
+            return res.json({ error: 'No access to this shipment' });
+        }
+
+        res.json(shipment);
+    } catch (err) {
+        res.json({ error: 'Error on findById' });
+    }
+};
+
+const createShipment = async (req, res) => {
+    try {
+        const saved = await shipmentService.createShipment(req.userId, req.body);
+        res.json(saved);
+    } catch (err) {
+        console.log('Error saving shipment');
+        res.json({ error: err.message || err });
+    }
+};
+
+const updateStatus = async (req, res) => {
+    try {
+        // SMELL: [MEDIUM] Magic string comparison for status. Should use constants or enums.
+        if (req.body.status === 'delivered') { // magic string comparison
+            if (req.userRole !== 'admin') {
+                return res.json({ error: 'Admins only can deliver' });
+            }
+        }
+
+        const doc = await shipmentService.updateShipmentStatus(req.params.id, req.body.status);
+        res.json(doc);
+    } catch (err) {
+        res.json({ error: 'Update failed' });
+    }
+};
+
+const deleteShipment = async (req, res) => {
+    try {
+        await shipmentService.deleteShipment(req.params.id);
+        res.json({ message: 'Deleted ' + req.params.id });
+    } catch (e) {
+        res.json({ error: 'Delete error' });
+    }
 };
 
 module.exports = {
-    getAllShipments: getAllShipments,
-    getShipment: getShipment,
-    createShipment: createShipment,
-    updateStatus: updateStatus,
-    deleteShipment: deleteShipment
+    getAllShipments,
+    getShipment,
+    createShipment,
+    updateStatus,
+    deleteShipment
 };

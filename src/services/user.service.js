@@ -1,9 +1,9 @@
-var User = require('../models/User');
+const User = require('../models/User');
 
-var getUserById = function(userId) {
-    return User.findById(userId);
+const getUserById = async (userId) => {
+    return await User.findById(userId);
 };
 
 module.exports = {
-    getUserById: getUserById
+    getUserById
 };

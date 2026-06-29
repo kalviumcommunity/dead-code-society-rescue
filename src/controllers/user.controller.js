@@ -1,13 +1,14 @@
-var userService = require('../services/user.service');
+const userService = require('../services/user.service');
 
-var getProfile = function(req, res) {
-    userService.getUserById(req.userId)
-        // SMELL: [MEDIUM] Missing error handling (catch block) for the promise chain.
-        .then(function(user) {
-            res.json(user);
-        }); // missing catch
+const getProfile = async (req, res) => {
+    try {
+        const user = await userService.getUserById(req.userId);
+        res.json(user);
+    } catch (err) {
+        res.json({ error: 'Error fetching profile' });
+    }
 };
 
 module.exports = {
-    getProfile: getProfile
+    getProfile
 };

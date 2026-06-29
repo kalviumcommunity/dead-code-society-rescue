@@ -1,11 +1,11 @@
-var jwt = require('jsonwebtoken');
-var JWT_SECRET = process.env.JWT_SECRET || 'secret123';
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'secret123';
 
-module.exports = function(req, res, next) {
-    var token = req.headers['authorization'];
+module.exports = (req, res, next) => {
+    const token = req.headers['authorization'];
     if (!token) return res.json({ error: 'Unauthorized: missing token' });
     
-    jwt.verify(token, JWT_SECRET, function(err, decoded) {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) return res.json({ error: 'Unauthorized: invalid token' });
         req.userId = decoded.id;
         req.userRole = decoded.role;

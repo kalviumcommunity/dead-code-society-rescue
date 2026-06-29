@@ -6,6 +6,7 @@ const cors = require('cors');
 
 // routes
 const routes = require('./routes/index');
+const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.get('/', (req, res) => {
 });
 
 // no 404 handler here, let express handle it for now
+
+// Centralized Error Handling
+app.use(errorHandler);
 
 // start server
 const PORT = process.env.PORT || 3000;
